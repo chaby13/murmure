@@ -1,10 +1,21 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/library_item.dart';
+import '../models/picked_document.dart';
 
-/// Accès à la bibliothèque locale. L'implémentation SQLite arrivera avec
-/// le ticket STORE-01 ; le squelette utilise un dépôt d'exemple en mémoire.
+/// Erreur d'import présentée telle quelle à l'utilisateur.
+class ImportException implements Exception {
+  const ImportException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+/// Accès à la bibliothèque locale.
 abstract class LibraryRepository extends ChangeNotifier {
+  /// Du plus récent au plus ancien.
   List<LibraryItem> get items;
 
   /// Vrai tant que le contenu provient de données d'exemple.
@@ -12,8 +23,17 @@ abstract class LibraryRepository extends ChangeNotifier {
 
   LibraryItem? byId(String id);
 
-  void toggleFavorite(String id);
-
-  /// Le dernier PDF en cours de lecture, pour « Reprendre ma lecture ».
+  /// Le dernier PDF ouvert, pour « Reprendre ma lecture ».
   LibraryItem? get lastRead;
+
+  /// Copie le PDF dans le stockage privé de l'application et l'ajoute.
+  /// Lève [ImportException] si le fichier n'est pas un PDF lisible.
+  Future<LibraryItem> importPdf(PickedDocument document);
+
+  /// Retire l'élément et efface son fichier du stockage privé.
+  Future<void> delete(String id);
+
+  Future<void> toggleFavorite(String id);
+
+  Future<void> markOpened(String id);
 }

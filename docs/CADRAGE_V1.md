@@ -194,6 +194,7 @@ Probabilité (P) et impact (I) notés de 1 à 3.
 | R9 | Fuite réseau via une bibliothèque tierce | 1 | 3 | Permission INTERNET retirée sur Android, audit de dépendances, capture réseau iOS | Audit PRIV-01 |
 | R10 | Surlignage phrase/mot imprécis | 2 | 1 | Surlignage par phrase seulement si l'alignement est fiable | Validation visuelle P1 |
 | R11 | Rendu ou extraction PDF défaillants sur fichiers difficiles | 2 | 2 | Corpus de PDF de test (chiffrés, corrompus, très longs) | Erreur explicite, jamais de plantage |
+| R13 | Copie involontaire vers le cloud par les sauvegardes système (Auto Backup Android vers Google Drive, sauvegarde iCloud) | 2 | 3 | Android : sauvegarde désactivée dans le manifeste (fait). iOS : marquer le dossier documents « exclu de la sauvegarde » (à faire, code natif) | Vérification sur appareil |
 | R12 | Logo source de qualité limitée (faux damier dans les coins) | 1 | 1 | Damier retiré par `tool/clean_logo.py`, source conservée ; SVG d'origine souhaitable | Logo net dans À propos |
 
 ---
@@ -204,7 +205,7 @@ Probabilité (P) et impact (I) notés de 1 à 3.
 |---|---|---|---|
 | L0 | Squelette Flutter : navigation 4 onglets + lecteur + paramètres + À propos, thème clair/sombre, logo original, données d'exemple marquées, moteurs « non intégré » | **Fait (ce lot)** | `flutter analyze` propre et 17 tests verts (fait) ; build sur Android et iPhone réels (à faire) |
 | L1 | Prototype de faisabilité : PDF texte, TTS FR/EN, ASR court, traduction d'une phrase, sur un Android et un iPhone physiques, mesures RAM/temps, audit réseau | À faire | Chaque fonction marche en mode avion avec mesures |
-| L2 | STORE-01 : base SQLite, import réel, suppression, export des données | À faire | Import/suppression/restauration testés |
+| L2 | STORE-01 : base SQLite, import réel, suppression, export des données | **Fait en partie** : base SQLite avec migrations, import PDF réel en stockage privé, suppression, favoris, dernière ouverture. Reste : export et suppression de toutes les données, menu Partager (F-02) | Import/suppression/restauration testés (fait, 6 tests) |
 | L3 | PDF-01/02 : rendu, extraction, reprise de position | À faire | Position restaurée après relance |
 | L4 | TTS-01/02 : voix réelles, panneau audio, arrière-plan | À faire | Écran verrouillé, commandes système |
 | L5 | ASR-01/02 : micro, import audio, transcription, export TXT | À faire | Fichiers de référence FR/EN |
@@ -223,7 +224,7 @@ Le prompt maître demande que le lot L1 (faisabilité locale) passe **avant** to
 - Navigation : Accueil, Bibliothèque, Transcrire, Traduire (barre du bas), Lecteur ouvert depuis un document, Paramètres par l'icône engrenage, À propos depuis les Paramètres, licences tierces via la page de licences Flutter.
 - Thème Murmure clair et sombre (ivoire #F3EFE7, vert foncé #344F49, vert pâle #D9E3DE, beige #E3D8CB) avec choix Système/Clair/Sombre dans les Paramètres (non persisté entre deux lancements pour l'instant).
 - Modes de lecture clair, sombre et sépia dans le lecteur.
-- Bibliothèque : recherche et filtres Tous/PDF/Audios/Transcriptions/Favoris fonctionnent sur les données d'exemple.
+- Bibliothèque : recherche et filtres Tous/PDF/Audios/Transcriptions/Favoris.
 - Traduction : saisie, permutation EN ⇄ FR.
 - Logo Chabane DEV original : crédit discret sur l'Accueil et dans les Paramètres, logo plus grand dans À propos.
 - Version lue depuis la configuration de build (`pubspec.yaml` → `package_info_plus`).
@@ -233,18 +234,27 @@ Le prompt maître demande que le lot L1 (faisabilité locale) passe **avant** to
 
 - Les documents de la bibliothèque et le texte du lecteur sont des exemples. Un bandeau « Données d'exemple » est affiché sur chaque écran qui les utilise.
 
+### Lot L2 (bibliothèque réelle)
+
+- La bibliothèque est désormais réelle : base SQLite dans le dossier privé de l'application, versionnée avec migrations.
+- « Importer PDF » ouvre le sélecteur de fichiers du système (sans permission), vérifie que le fichier est bien un PDF, puis le copie dans le stockage privé.
+- Suppression avec confirmation (la ligne et le fichier), favoris et date de dernière ouverture persistés ; « Reprendre ma lecture » montre le dernier PDF ouvert.
+- Les données d'exemple ne sont plus utilisées par l'application ; elles servent seulement aux tests.
+- Ouvrir un PDF importé affiche honnêtement « Affichage des pages pas encore disponible » : le rendu arrive avec le moteur PDF.
+- Android : sauvegarde cloud et transfert d'appareil désactivés pour les données de Murmure.
+
 ### Non fait (bouton désactivé ou message explicite dans l'app)
 
 - Import PDF, rendu PDF, extraction de texte, OCR.
 - Synthèse vocale, transcription, traduction : chaque moteur s'affiche « Non intégré » dans Paramètres → Moteurs locaux.
-- Persistance (SQLite), export, chiffrement.
+- Export et suppression de toutes les données, réception depuis le menu Partager, chiffrement, persistance des préférences d'apparence.
 - Build Android (le SDK Android n'était pas téléchargeable dans l'environnement de travail) et build iOS (nécessite un Mac), tests sur appareils physiques, audit réseau.
 - Vérification du manifeste Android fusionné : le retrait de `INTERNET` en release est en place mais reste à contrôler sur un vrai build.
 
 ### Vérifié
 
 - `flutter analyze` : aucun problème.
-- `flutter test` : 17 tests verts (navigation des onglets, ouverture du lecteur, À propos avec logo et version du build, crédit discret, filtres et recherche, favoris, contraste AA des thèmes et des modes de lecture, bascule sombre, et des tests d'honnêteté : aucun moteur ne se déclare disponible, Traduire ne produit aucune fausse traduction, les données d'exemple sont signalées).
+- `flutter test` : 22 tests verts (dont 6 sur la bibliothèque réelle : import, refus d'un faux PDF, persistance après réouverture, suppression du fichier, parcours complet dans l'interface) (navigation des onglets, ouverture du lecteur, À propos avec logo et version du build, crédit discret, filtres et recherche, favoris, contraste AA des thèmes et des modes de lecture, bascule sombre, et des tests d'honnêteté : aucun moteur ne se déclare disponible, Traduire ne produit aucune fausse traduction, les données d'exemple sont signalées).
 - Captures clair/sombre des 7 écrans dans `docs/captures/` (rendu web de contrôle, polices système du navigateur).
 
 ### Lancer le projet

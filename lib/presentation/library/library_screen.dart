@@ -8,6 +8,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/library_item_icon.dart';
 import '../widgets/not_integrated.dart';
 import '../widgets/sample_data_banner.dart';
+import 'import_pdf.dart';
 
 enum LibraryFilter {
   all('Tous'),
@@ -49,8 +50,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('Importer'),
-        onPressed: () =>
-            showNotIntegrated(context, 'Import de fichier', 'PDF-01'),
+        onPressed: () => importPdf(context),
       ),
       body: ListenableBuilder(
         listenable: library,
@@ -89,7 +89,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 const SampleDataBanner(),
               ],
               const SizedBox(height: 8),
-              if (visible.isEmpty)
+              if (library.items.isEmpty)
+                const EmptyState(
+                  icon: Icons.menu_book_outlined,
+                  title: 'Bibliothèque vide',
+                  message:
+                      'Touchez « Importer » pour ajouter un PDF depuis '
+                      'ce téléphone.',
+                )
+              else if (visible.isEmpty)
                 const EmptyState(
                   icon: Icons.search_off,
                   title: 'Aucun document',
@@ -97,39 +105,57 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       'Rien ne correspond à cette recherche ou à ce filtre.',
                 )
               else
-                for (final item in visible)
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                    leading: LibraryItemIcon(type: item.type),
-                    title: Text(item.title),
-                    subtitle: Row(
-                      children: [
-                        Flexible(child: Text(describeLibraryItem(item))),
-                        if (item.isSample) ...[
-                          const SizedBox(width: 8),
-                          const SampleTag(),
-                        ],
-                      ],
-                    ),
-                    trailing: IconButton(
-                      tooltip: item.isFavorite
-                          ? 'Retirer des favoris'
-                          : 'Ajouter aux favoris',
-                      icon: Icon(
-                        item.isFavorite ? Icons.star : Icons.star_border,
-                      ),
-                      onPressed: () => library.toggleFavorite(item.id),
-                    ),
-                    onTap: () => _open(context, item),
-                  ),
+                for (final item in visible) _LibraryTile(item: item),
             ],
           );
         },
       ),
     );
   }
+}
 
-  void _open(BuildContext context, LibraryItem item) {
+class _LibraryTile extends StatelessWidget {
+  const _LibraryTile({required this.item});
+
+  final LibraryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final library = AppScope.of(context).library;
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+      leading: LibraryItemIcon(type: item.type),
+      title: Text(item.title),
+      subtitle: Row(
+        children: [
+          Flexible(child: Text(describeLibraryItem(item))),
+          if (item.isSample) ...[const SizedBox(width: 8), const SampleTag()],
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: item.isFavorite
+                ? 'Retirer des favoris'
+                : 'Ajouter aux favoris',
+            icon: Icon(item.isFavorite ? Icons.star : Icons.star_border),
+            onPressed: () => library.toggleFavorite(item.id),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Plus d’actions',
+            onSelected: (_) => confirmDelete(context, item.id, item.title),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'delete', child: Text('Supprimer')),
+            ],
+          ),
+        ],
+      ),
+      onTap: () => _open(context),
+    );
+  }
+
+  void _open(BuildContext context) {
     switch (item.type) {
       case LibraryItemType.pdf:
         context.push(AppRoutes.reader(item.id));

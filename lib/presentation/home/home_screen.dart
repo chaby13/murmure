@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../core/app_scope.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/models/library_item.dart';
+import '../library/import_pdf.dart';
 import '../widgets/developer_credit.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/library_item_icon.dart';
-import '../widgets/not_integrated.dart';
 import '../widgets/sample_data_banner.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -70,6 +71,22 @@ class HomeScreen extends StatelessWidget {
               if (lastRead != null) ...[
                 const SizedBox(height: 16),
                 _ResumeCard(item: lastRead),
+              ] else if (library.items.isEmpty) ...[
+                const SizedBox(height: 16),
+                Card(
+                  child: EmptyState(
+                    icon: Icons.menu_book_outlined,
+                    title: 'Votre bibliothèque est vide',
+                    message:
+                        'Importez un PDF : il est copié dans l’espace '
+                        'privé de Murmure, sur ce téléphone.',
+                    action: FilledButton.icon(
+                      icon: const Icon(Icons.upload_file_outlined),
+                      label: const Text('Importer un PDF'),
+                      onPressed: () => importPdf(context),
+                    ),
+                  ),
+                ),
               ],
               const SizedBox(height: 24),
               Text('Accès rapides', style: theme.textTheme.titleMedium),
@@ -85,8 +102,7 @@ class HomeScreen extends StatelessWidget {
                   _QuickAction(
                     icon: Icons.upload_file_outlined,
                     label: 'Importer PDF',
-                    onTap: () =>
-                        showNotIntegrated(context, 'Import PDF', 'PDF-01'),
+                    onTap: () => importPdf(context),
                   ),
                   _QuickAction(
                     icon: Icons.mic_none,
@@ -105,9 +121,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Text('Documents récents', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
+              if (recents.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text('Documents récents', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+              ],
               for (final item in recents)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -164,14 +182,17 @@ class _ResumeCard extends StatelessWidget {
                     children: [
                       Text(item.title, style: theme.textTheme.titleLarge),
                       const SizedBox(height: 4),
-                      Text('Page ${item.currentPage} sur ${item.pageCount}'),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: item.progress,
-                        minHeight: 6,
-                        borderRadius: BorderRadius.circular(3),
-                        semanticsLabel: 'Progression de lecture',
-                      ),
+                      if (item.progress != null) ...[
+                        Text('Page ${item.currentPage} sur ${item.pageCount}'),
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(
+                          value: item.progress,
+                          minHeight: 6,
+                          borderRadius: BorderRadius.circular(3),
+                          semanticsLabel: 'Progression de lecture',
+                        ),
+                      ] else if (item.lastOpenedAt != null)
+                        Text('Ouvert le ${formatDate(item.lastOpenedAt!)}'),
                     ],
                   ),
                 ),

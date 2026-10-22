@@ -18,7 +18,7 @@ Future<AppDependencies> pumpMurmure(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
-  final deps = AppDependencies.skeleton();
+  final deps = AppDependencies.sample();
   await tester.pumpWidget(
     AppScope(dependencies: deps, child: const MurmureApp()),
   );

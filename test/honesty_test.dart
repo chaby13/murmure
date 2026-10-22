@@ -86,16 +86,4 @@ void main() {
     expect(find.textContaining('Données d’exemple'), findsOneWidget);
     expect(find.text('Exemple'), findsWidgets);
   });
-
-  testWidgets('Importer PDF explique que la fonction n’existe pas encore', (
-    tester,
-  ) async {
-    await pumpMurmure(tester);
-    await tester.tap(find.text('Importer PDF'));
-    await tester.pump();
-    expect(
-      find.textContaining('Aucun traitement n’a été effectué'),
-      findsOneWidget,
-    );
-  });
 }

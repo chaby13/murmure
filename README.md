@@ -4,7 +4,7 @@
 
 Lecture PDF à voix douce, transcription et traduction anglais ⇄ français, traitées sur le téléphone.
 
-**État : squelette (lot L0).** Navigation, thème, logo et données d'exemple marquées. Aucun moteur local (PDF, OCR, voix, transcription, traduction) n'est encore intégré : l'application le dit à chaque endroit concerné. Voir `docs/CADRAGE_V1.md` pour le PRD, l'architecture, les risques et le plan.
+**État : lots L0 et L2 (en partie).** Navigation, thème, logo, et une vraie bibliothèque locale (SQLite + import PDF en stockage privé). Aucun moteur local (PDF, OCR, voix, transcription, traduction) n'est encore intégré : l'application le dit à chaque endroit concerné. Voir `docs/CADRAGE_V1.md` pour le PRD, l'architecture, les risques et le plan.
 
 ## Lancer
 

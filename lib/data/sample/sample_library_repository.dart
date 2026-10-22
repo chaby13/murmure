@@ -1,4 +1,5 @@
 import '../../domain/models/library_item.dart';
+import '../../domain/models/picked_document.dart';
 import '../../domain/services/library_repository.dart';
 
 /// Données d'EXEMPLE en mémoire pour le squelette. Aucun de ces fichiers
@@ -94,7 +95,7 @@ class SampleLibraryRepository extends LibraryRepository {
   }
 
   @override
-  void toggleFavorite(String id) {
+  Future<void> toggleFavorite(String id) async {
     final index = _items.indexWhere((item) => item.id == id);
     if (index == -1) return;
     _items[index] = _items[index].copyWith(
@@ -102,4 +103,19 @@ class SampleLibraryRepository extends LibraryRepository {
     );
     notifyListeners();
   }
+
+  @override
+  Future<LibraryItem> importPdf(PickedDocument document) async =>
+      throw const ImportException(
+        'La bibliothèque d’exemple ne peut pas importer de fichiers.',
+      );
+
+  @override
+  Future<void> delete(String id) async {
+    _items.removeWhere((item) => item.id == id);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> markOpened(String id) async {}
 }

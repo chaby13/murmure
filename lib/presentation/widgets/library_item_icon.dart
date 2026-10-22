@@ -40,7 +40,10 @@ class LibraryItemIcon extends StatelessWidget {
 String describeLibraryItem(LibraryItem item) {
   final size = _formatSize(item.sizeBytes);
   return switch (item.type) {
-    LibraryItemType.pdf => '${item.pageCount} pages • $size',
+    LibraryItemType.pdf =>
+      item.pageCount == null
+          ? 'PDF • $size'
+          : '${item.pageCount} pages • $size',
     LibraryItemType.audio || LibraryItemType.transcription =>
       '${formatDuration(item.duration ?? Duration.zero)} • $size',
   };
@@ -56,4 +59,9 @@ String _formatSize(int bytes) {
   const mb = 1024 * 1024;
   if (bytes >= mb) return '${(bytes / mb).round()} Mo';
   return '${(bytes / 1024).ceil()} Ko';
+}
+
+String formatDate(DateTime date) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(date.day)}/${two(date.month)}/${date.year}';
 }

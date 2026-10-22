@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_scope.dart';
 import '../../core/theme/murmure_colors.dart';
+import '../../domain/models/library_item.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/library_item_icon.dart';
 import '../widgets/not_integrated.dart';
 import '../widgets/sample_data_banner.dart';
 
@@ -14,15 +16,29 @@ const _sampleChapter = [
       'The more we explore, the more we discover new perspectives.',
 ];
 
-class ReaderScreen extends StatelessWidget {
+class ReaderScreen extends StatefulWidget {
   const ReaderScreen({super.key, required this.itemId});
 
   final String itemId;
 
   @override
+  State<ReaderScreen> createState() => _ReaderScreenState();
+}
+
+class _ReaderScreenState extends State<ReaderScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Mémorise l'ouverture pour « Reprendre ma lecture ».
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppScope.of(context).library.markOpened(widget.itemId);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final deps = AppScope.of(context);
-    final item = deps.library.byId(itemId);
+    final item = deps.library.byId(widget.itemId);
     if (item == null) {
       return Scaffold(
         appBar: AppBar(),
@@ -84,72 +100,77 @@ class ReaderScreen extends StatelessWidget {
           body: Column(
             children: [
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                  children: [
-                    if (item.isSample)
-                      const SampleDataBanner(
-                        message:
-                            'Texte d’exemple : ce n’est pas l’extraction '
-                            'd’un vrai PDF. Le moteur PDF local n’est pas '
-                            'encore intégré.',
-                      ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Chapter 3\nLearning',
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        color: mode.text,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    for (final paragraph in _sampleChapter) ...[
-                      SelectableText(
-                        paragraph,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: mode.text,
-                          height: 1.6,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    const SizedBox(height: 8),
-                    Wrap(
-                      alignment: WrapAlignment.spaceAround,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _ReaderAction(
-                          icon: Icons.border_color_outlined,
-                          label: 'Surligner',
-                          color: mode.text,
-                          onTap: () => showNotIntegrated(
-                            context,
-                            'Surlignage',
-                            'PDF-02',
+                child: !item.isSample
+                    ? _PagesNotRendered(item: item, mode: mode)
+                    : ListView(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                        children: [
+                          if (item.isSample)
+                            const SampleDataBanner(
+                              message:
+                                  'Texte d’exemple : ce n’est pas l’extraction '
+                                  'd’un vrai PDF. Le moteur PDF local n’est pas '
+                                  'encore intégré.',
+                            ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Chapter 3\nLearning',
+                            style: theme.textTheme.headlineLarge?.copyWith(
+                              color: mode.text,
+                            ),
                           ),
-                        ),
-                        _ReaderAction(
-                          icon: Icons.translate,
-                          label: 'Traduire',
-                          color: mode.text,
-                          onTap: () => showNotIntegrated(
-                            context,
-                            'Traduction de sélection',
-                            'TR-02',
+                          const SizedBox(height: 20),
+                          for (final paragraph in _sampleChapter) ...[
+                            SelectableText(
+                              paragraph,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: mode.text,
+                                height: 1.6,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          const SizedBox(height: 8),
+                          Wrap(
+                            alignment: WrapAlignment.spaceAround,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _ReaderAction(
+                                icon: Icons.border_color_outlined,
+                                label: 'Surligner',
+                                color: mode.text,
+                                onTap: () => showNotIntegrated(
+                                  context,
+                                  'Surlignage',
+                                  'PDF-02',
+                                ),
+                              ),
+                              _ReaderAction(
+                                icon: Icons.translate,
+                                label: 'Traduire',
+                                color: mode.text,
+                                onTap: () => showNotIntegrated(
+                                  context,
+                                  'Traduction de sélection',
+                                  'TR-02',
+                                ),
+                              ),
+                              _ReaderAction(
+                                icon: Icons.sticky_note_2_outlined,
+                                label: 'Note',
+                                color: mode.text,
+                                onTap: () => showNotIntegrated(
+                                  context,
+                                  'Notes',
+                                  'PDF-02',
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        _ReaderAction(
-                          icon: Icons.sticky_note_2_outlined,
-                          label: 'Note',
-                          color: mode.text,
-                          onTap: () =>
-                              showNotIntegrated(context, 'Notes', 'PDF-02'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        ],
+                      ),
               ),
               const _AudioPanel(),
             ],
@@ -252,6 +273,41 @@ class _AudioPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Document réel importé : le fichier est bien stocké, mais l'affichage des
+/// pages attend l'intégration du moteur PDF.
+class _PagesNotRendered extends StatelessWidget {
+  const _PagesNotRendered({required this.item, required this.mode});
+
+  final LibraryItem item;
+  final ReaderMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.bodyMedium?.copyWith(color: mode.text);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      children: [
+        Icon(Icons.picture_as_pdf_outlined, size: 56, color: mode.text),
+        const SizedBox(height: 16),
+        Text(
+          'Affichage des pages pas encore disponible',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(color: mode.text),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Ce PDF est bien enregistré dans l’espace privé de Murmure '
+          '(${describeLibraryItem(item)}). Le rendu des pages et '
+          'l’extraction du texte arrivent avec le moteur PDF local.',
+          textAlign: TextAlign.center,
+          style: style,
+        ),
+      ],
     );
   }
 }
