@@ -7,27 +7,30 @@ import 'package:sqflite/sqflite.dart';
 import '../../domain/models/library_item.dart';
 import '../../domain/models/picked_document.dart';
 import '../../domain/services/library_repository.dart';
+import '../../domain/services/local_engines.dart';
 import 'library_database.dart';
 
 /// Bibliothèque réelle : métadonnées en SQLite, fichiers copiés dans le
 /// dossier privé de l'application. Rien ne sort de l'appareil.
 class LocalLibraryRepository extends LibraryRepository {
-  LocalLibraryRepository._(this._db, this._documentsDir);
+  LocalLibraryRepository._(this._db, this._documentsDir, this._pdf);
 
   static Future<LocalLibraryRepository> open({
     required String databasePath,
     required Directory documentsDir,
+    required PdfEngine pdfEngine,
     DatabaseFactory? factory,
   }) async {
     await documentsDir.create(recursive: true);
     final db = await openLibraryDatabase(databasePath, factory: factory);
-    final repository = LocalLibraryRepository._(db, documentsDir);
+    final repository = LocalLibraryRepository._(db, documentsDir, pdfEngine);
     await repository._reload();
     return repository;
   }
 
   final Database _db;
   final Directory _documentsDir;
+  final PdfEngine _pdf;
   List<LibraryItem> _items = const [];
 
   static final _random = Random.secure();
@@ -57,9 +60,11 @@ class LocalLibraryRepository extends LibraryRepository {
     return latest;
   }
 
-  /// Chemin du fichier d'un élément dans le stockage privé.
-  File fileOf(LibraryItem item) =>
-      File(p.join(_documentsDir.path, item.fileName));
+  @override
+  File? fileOf(LibraryItem item) {
+    final name = item.fileName;
+    return name == null ? null : File(p.join(_documentsDir.path, name));
+  }
 
   @override
   Future<LibraryItem> importPdf(PickedDocument document) async {
@@ -75,6 +80,10 @@ class LocalLibraryRepository extends LibraryRepository {
     final fileName = '$id.pdf';
     final copy = await source.copy(p.join(_documentsDir.path, fileName));
     try {
+      // Sans moteur PDF, le nombre de pages reste inconnu.
+      final pageCount = _pdf.isAvailable
+          ? await _pdf.pageCount(copy.path)
+          : null;
       final now = DateTime.now();
       await _db.insert('items', {
         'id': id,
@@ -82,9 +91,13 @@ class LocalLibraryRepository extends LibraryRepository {
         'type': LibraryItemType.pdf.name,
         'file_name': fileName,
         'size_bytes': await copy.length(),
+        'page_count': pageCount,
         'is_favorite': 0,
         'added_at': now.millisecondsSinceEpoch,
       });
+    } on PdfOpenException catch (e) {
+      await copy.delete();
+      throw ImportException(e.message);
     } catch (_) {
       await copy.delete();
       rethrow;
@@ -98,10 +111,8 @@ class LocalLibraryRepository extends LibraryRepository {
     final item = byId(id);
     if (item == null) return;
     await _db.delete('items', where: 'id = ?', whereArgs: [id]);
-    if (item.fileName != null) {
-      final file = fileOf(item);
-      if (await file.exists()) await file.delete();
-    }
+    final file = fileOf(item);
+    if (file != null && await file.exists()) await file.delete();
     await _reload();
   }
 
@@ -123,6 +134,19 @@ class LocalLibraryRepository extends LibraryRepository {
     await _db.update(
       'items',
       {'last_opened_at': DateTime.now().millisecondsSinceEpoch},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await _reload();
+  }
+
+  @override
+  Future<void> savePage(String id, int page) async {
+    final item = byId(id);
+    if (item == null || item.currentPage == page) return;
+    await _db.update(
+      'items',
+      {'current_page': page},
       where: 'id = ?',
       whereArgs: [id],
     );

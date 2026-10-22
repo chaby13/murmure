@@ -109,7 +109,7 @@ Compte utilisateur, synchronisation cloud, autres langues que FR/EN, édition de
 | Version | `package_info_plus` | Lit la version du build, aucune valeur codée en dur | — |
 | Polices | Polices système pour l'instant | Pas de téléchargement de police (le paquet `google_fonts` contacte le réseau, il est exclu) | Une serif sous licence OFL sera embarquée en phase 2 |
 | Base locale | SQLite via `sqflite` ou `drift` (à trancher en lot STORE-01) | Migrations, requêtes de recherche | `drift` ajoute de la génération de code |
-| PDF | Candidats : `pdfrx` (PDFium, BSD/Apache) ; alternative PDFKit/PdfRenderer natifs | Rendu + extraction de texte sur les deux plateformes | Licence et taille du binaire PDFium à vérifier |
+| PDF | **Retenu : `pdfrx` 2.10 (MIT) + PDFium (BSD-3/Apache-2.0)** ; il peut ouvrir des URL, fonction jamais utilisée (et bloquée sur Android sans permission Internet) | Rendu + extraction de texte sur les deux plateformes | Licence et taille du binaire PDFium à vérifier |
 | TTS | Candidats : sherpa-onnx avec voix Piper/VITS FR et EN ; repli sur les voix système hors ligne | Voix douces, entièrement locales | Licences des voix au cas par cas ; les voix système iOS/Android ne sont pas toujours installées hors ligne |
 | ASR | Candidats : whisper.cpp (base/small quantifiés) et sherpa-onnx (Whisper ou Zipformer) | Multilingue FR/EN avec horodatages | Vitesse et RAM sur Android moyen à mesurer |
 | Traduction | Candidats : modèles Opus-MT / Bergamot (Marian) FR↔EN quantifiés, via CTranslate2 ou Bergamot | Compacts, deux directions, sans serveur | Licences (CC-BY pour certains modèles Opus-MT), segmentation des longs textes |
@@ -206,7 +206,7 @@ Probabilité (P) et impact (I) notés de 1 à 3.
 | L0 | Squelette Flutter : navigation 4 onglets + lecteur + paramètres + À propos, thème clair/sombre, logo original, données d'exemple marquées, moteurs « non intégré » | **Fait (ce lot)** | `flutter analyze` propre et 17 tests verts (fait) ; build sur Android et iPhone réels (à faire) |
 | L1 | Prototype de faisabilité : PDF texte, TTS FR/EN, ASR court, traduction d'une phrase, sur un Android et un iPhone physiques, mesures RAM/temps, audit réseau | À faire | Chaque fonction marche en mode avion avec mesures |
 | L2 | STORE-01 : base SQLite, import réel, suppression, export des données | **Fait en partie** : base SQLite avec migrations, import PDF réel en stockage privé, suppression, favoris, dernière ouverture. Reste : export et suppression de toutes les données, menu Partager (F-02) | Import/suppression/restauration testés (fait, 6 tests) |
-| L3 | PDF-01/02 : rendu, extraction, reprise de position | À faire | Position restaurée après relance |
+| L3 | PDF-01/02 : rendu, extraction, reprise de position | **Fait en partie** : rendu des pages (PDFium via pdfrx), nombre de pages à l'import, refus des PDF endommagés, page mémorisée et restaurée, texte de la page. Reste : recherche, signets, PDF protégés par mot de passe, test sur téléphone | Position restaurée après relance (testé sur la base) ; rendu vérifié dans un navigateur |
 | L4 | TTS-01/02 : voix réelles, panneau audio, arrière-plan | À faire | Écran verrouillé, commandes système |
 | L5 | ASR-01/02 : micro, import audio, transcription, export TXT | À faire | Fichiers de référence FR/EN |
 | L6 | TR-01/02 : traduction FR↔EN, écoute des deux versions | À faire | Jeu de phrases de test |
@@ -254,7 +254,7 @@ Le prompt maître demande que le lot L1 (faisabilité locale) passe **avant** to
 ### Vérifié
 
 - `flutter analyze` : aucun problème.
-- `flutter test` : 22 tests verts (dont 6 sur la bibliothèque réelle : import, refus d'un faux PDF, persistance après réouverture, suppression du fichier, parcours complet dans l'interface) (navigation des onglets, ouverture du lecteur, À propos avec logo et version du build, crédit discret, filtres et recherche, favoris, contraste AA des thèmes et des modes de lecture, bascule sombre, et des tests d'honnêteté : aucun moteur ne se déclare disponible, Traduire ne produit aucune fausse traduction, les données d'exemple sont signalées).
+- `flutter test` : 28 tests verts (dont 6 sur le moteur PDF réel : nombre de pages, texte avec accents, PDF endommagé, reprise de page) (dont 6 sur la bibliothèque réelle : import, refus d'un faux PDF, persistance après réouverture, suppression du fichier, parcours complet dans l'interface) (navigation des onglets, ouverture du lecteur, À propos avec logo et version du build, crédit discret, filtres et recherche, favoris, contraste AA des thèmes et des modes de lecture, bascule sombre, et des tests d'honnêteté : aucun moteur ne se déclare disponible, Traduire ne produit aucune fausse traduction, les données d'exemple sont signalées).
 - Captures clair/sombre des 7 écrans dans `docs/captures/` (rendu web de contrôle, polices système du navigateur).
 
 ### Lancer le projet

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/library_item.dart';
@@ -36,4 +38,10 @@ abstract class LibraryRepository extends ChangeNotifier {
   Future<void> toggleFavorite(String id);
 
   Future<void> markOpened(String id);
+
+  /// Mémorise la page en cours (à partir de 1) pour la reprise.
+  Future<void> savePage(String id, int page);
+
+  /// Fichier local de l'élément, ou null pour un exemple sans fichier.
+  File? fileOf(LibraryItem item);
 }

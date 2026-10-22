@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../../domain/models/library_item.dart';
 import '../../domain/models/picked_document.dart';
 import '../../domain/services/library_repository.dart';
@@ -118,4 +120,10 @@ class SampleLibraryRepository extends LibraryRepository {
 
   @override
   Future<void> markOpened(String id) async {}
+
+  @override
+  Future<void> savePage(String id, int page) async {}
+
+  @override
+  File? fileOf(LibraryItem item) => null;
 }

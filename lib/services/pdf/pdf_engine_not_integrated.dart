@@ -14,6 +14,10 @@ class PdfEngineNotIntegrated implements PdfEngine {
   bool get isAvailable => false;
 
   @override
-  Future<String> extractPageText(String filePath, int pageIndex) =>
+  Future<int> pageCount(String filePath) =>
+      throw EngineNotIntegratedException(label, ticket);
+
+  @override
+  Future<String> extractPageText(String filePath, int pageNumber) =>
       throw EngineNotIntegratedException(label, ticket);
 }

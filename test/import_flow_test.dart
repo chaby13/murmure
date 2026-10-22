@@ -44,6 +44,7 @@ void main() {
         databasePath: p.join(root.path, 'murmure.db'),
         documentsDir: Directory(p.join(root.path, 'documents')),
         factory: databaseFactoryFfi,
+        pdfEngine: const EngineRegistry.notIntegrated().pdf,
       ),
     ))!;
     addTearDown(() => tester.runAsync(repo.close));
@@ -96,10 +97,7 @@ void main() {
     // Ouvrir : le lecteur dit honnêtement que le rendu n'est pas prêt.
     await tester.tap(find.text('English Stories.pdf'));
     await settleIo(tester);
-    expect(
-      find.text('Affichage des pages pas encore disponible'),
-      findsOneWidget,
-    );
+    expect(find.text('Affichage des pages indisponible'), findsOneWidget);
     expect(repo.lastRead?.title, 'English Stories.pdf');
     await tester.tap(find.byTooltip('Retour'));
     await tester.pumpAndSettle();

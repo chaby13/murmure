@@ -5,12 +5,15 @@ import 'package:murmure/data/local/local_library_repository.dart';
 import 'package:murmure/domain/models/picked_document.dart';
 import 'package:murmure/domain/services/library_repository.dart';
 import 'package:path/path.dart' as p;
+import 'package:murmure/services/pdf/pdfium_pdf_engine.dart';
+import 'package:pdfrx_engine/pdfrx_engine.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'support/fixtures.dart';
 
 void main() {
   sqfliteFfiInit();
+  setUpAll(() => pdfrxInitialize());
   late Directory root;
   late Directory inbox;
 
@@ -18,6 +21,7 @@ void main() {
     databasePath: p.join(root.path, 'murmure.db'),
     documentsDir: Directory(p.join(root.path, 'documents')),
     factory: databaseFactoryFfi,
+    pdfEngine: const PdfiumPdfEngine(),
   );
 
   setUp(() {
@@ -38,7 +42,7 @@ void main() {
       expect(item.title, 'Cours d’anglais.pdf');
       expect(item.isSample, isFalse);
       expect(item.sizeBytes, source.lengthSync());
-      final copy = repo.fileOf(item);
+      final copy = repo.fileOf(item)!;
       expect(copy.path, startsWith(p.join(root.path, 'documents')));
       expect(copy.readAsStringSync(), minimalPdf);
 
@@ -47,7 +51,7 @@ void main() {
       await repo.close();
       repo = await open();
       expect(repo.items.single.title, 'Cours d’anglais.pdf');
-      expect(repo.fileOf(repo.items.single).existsSync(), isTrue);
+      expect(repo.fileOf(repo.items.single)!.existsSync(), isTrue);
       await repo.close();
     },
   );
@@ -84,7 +88,7 @@ void main() {
     final item = await repo.importPdf(
       PickedDocument(name: 'a.pdf', path: source.path),
     );
-    final copy = repo.fileOf(item);
+    final copy = repo.fileOf(item)!;
 
     await repo.delete(item.id);
     expect(repo.items, isEmpty);
@@ -113,6 +117,51 @@ void main() {
     expect(reloaded.lastOpenedAt, isNotNull);
     expect(repo.lastRead?.id, first.id);
     expect(repo.items.first.title, 'B.pdf', reason: 'plus récent en premier');
+    await repo.close();
+  });
+
+  test('un vrai PDF importé connaît son nombre de pages', () async {
+    final repo = await open();
+    final item = await repo.importPdf(
+      PickedDocument(
+        name: 'deux_pages.pdf',
+        path: 'test/fixtures/deux_pages.pdf',
+      ),
+    );
+    expect(item.pageCount, greaterThanOrEqualTo(1));
+    await repo.close();
+  });
+
+  test('un PDF endommagé est refusé avec un message clair', () async {
+    final broken = writeFile(inbox, 'casse.pdf', '%PDF-1.4\npas un vrai PDF');
+    final repo = await open();
+    await expectLater(
+      repo.importPdf(PickedDocument(name: 'casse.pdf', path: broken.path)),
+      throwsA(
+        isA<ImportException>().having(
+          (e) => e.message,
+          'message',
+          contains('endommagé'),
+        ),
+      ),
+    );
+    expect(Directory(p.join(root.path, 'documents')).listSync(), isEmpty);
+    await repo.close();
+  });
+
+  test('la page en cours est retrouvée après réouverture', () async {
+    var repo = await open();
+    final item = await repo.importPdf(
+      PickedDocument(
+        name: 'deux_pages.pdf',
+        path: 'test/fixtures/deux_pages.pdf',
+      ),
+    );
+    await repo.savePage(item.id, 2);
+    await repo.close();
+
+    repo = await open();
+    expect(repo.byId(item.id)!.currentPage, 2);
     await repo.close();
   });
 }

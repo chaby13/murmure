@@ -24,8 +24,23 @@ abstract interface class LocalEngine {
   bool get isAvailable;
 }
 
+/// Erreur d'ouverture d'un PDF (endommagé, protégé par mot de passe…).
+class PdfOpenException implements Exception {
+  const PdfOpenException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 abstract interface class PdfEngine implements LocalEngine {
-  Future<String> extractPageText(String filePath, int pageIndex);
+  /// Nombre de pages. Lève [PdfOpenException] si le fichier ne s'ouvre pas.
+  Future<int> pageCount(String filePath);
+
+  /// Texte de la page [pageNumber] (à partir de 1). Chaîne vide pour une
+  /// page sans texte, par exemple une page scannée.
+  Future<String> extractPageText(String filePath, int pageNumber);
 }
 
 abstract interface class OcrEngine implements LocalEngine {

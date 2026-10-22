@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 import '../../core/app_scope.dart';
 import '../../core/theme/murmure_colors.dart';
 import '../../domain/models/library_item.dart';
+import '../../domain/services/library_repository.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/library_item_icon.dart';
 import '../widgets/not_integrated.dart';
@@ -26,6 +30,9 @@ class ReaderScreen extends StatefulWidget {
 }
 
 class _ReaderScreenState extends State<ReaderScreen> {
+  int? _page;
+  Timer? _saveTimer;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +40,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) AppScope.of(context).library.markOpened(widget.itemId);
     });
+  }
+
+  @override
+  void dispose() {
+    _saveTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onPageChanged(LibraryRepository library, int? page) {
+    if (page == null || page == _page) return;
+    setState(() => _page = page);
+    // Enregistre la page quand la lecture se stabilise.
+    _saveTimer?.cancel();
+    _saveTimer = Timer(
+      const Duration(milliseconds: 600),
+      () => library.savePage(widget.itemId, page),
+    );
   }
 
   @override
@@ -49,12 +73,40 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
       );
     }
+    final file = deps.library.fileOf(item);
+    final canRender = file != null && deps.engines.pdf.isAvailable;
+    final page = _page ?? item.currentPage ?? 1;
 
     return ListenableBuilder(
       listenable: deps.settings,
       builder: (context, _) {
         final mode = deps.settings.readerMode;
         final theme = Theme.of(context);
+
+        final Widget content;
+        if (item.isSample) {
+          content = _SampleChapter(mode: mode);
+        } else if (canRender) {
+          content = PdfViewer.file(
+            file.path,
+            initialPageNumber: item.currentPage ?? 1,
+            params: PdfViewerParams(
+              backgroundColor: mode.background,
+              onPageChanged: (page) => _onPageChanged(deps.library, page),
+              errorBannerBuilder: (context, error, stackTrace, ref) =>
+                  const EmptyState(
+                    icon: Icons.error_outline,
+                    title: 'Impossible d’afficher ce PDF',
+                    message:
+                        'Le fichier est peut-être endommagé ou protégé '
+                        'par un mot de passe.',
+                  ),
+            ),
+          );
+        } else {
+          content = _PagesNotRendered(item: item, mode: mode);
+        }
+
         return Scaffold(
           backgroundColor: mode.background,
           appBar: AppBar(
@@ -71,7 +123,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ),
                 if (item.pageCount != null)
                   Text(
-                    'Page ${item.currentPage ?? 1} sur ${item.pageCount}',
+                    'Page $page sur ${item.pageCount}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: mode.text,
                     ),
@@ -79,6 +131,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ],
             ),
             actions: [
+              if (canRender && !item.isSample)
+                IconButton(
+                  tooltip: 'Texte de la page',
+                  icon: const Icon(Icons.notes),
+                  onPressed: () => _showPageText(context, file.path, page),
+                ),
               PopupMenuButton<ReaderMode>(
                 tooltip: 'Mode de lecture',
                 icon: const Icon(Icons.contrast),
@@ -89,94 +147,135 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     PopupMenuItem(value: value, child: Text(value.label)),
                 ],
               ),
-              IconButton(
-                tooltip: 'Ajouter un signet',
-                icon: const Icon(Icons.bookmark_border),
-                onPressed: () =>
-                    showNotIntegrated(context, 'Signets', 'PDF-02'),
-              ),
             ],
           ),
           body: Column(
             children: [
-              Expanded(
-                child: !item.isSample
-                    ? _PagesNotRendered(item: item, mode: mode)
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                        children: [
-                          if (item.isSample)
-                            const SampleDataBanner(
-                              message:
-                                  'Texte d’exemple : ce n’est pas l’extraction '
-                                  'd’un vrai PDF. Le moteur PDF local n’est pas '
-                                  'encore intégré.',
-                            ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'Chapter 3\nLearning',
-                            style: theme.textTheme.headlineLarge?.copyWith(
-                              color: mode.text,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          for (final paragraph in _sampleChapter) ...[
-                            SelectableText(
-                              paragraph,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: mode.text,
-                                height: 1.6,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          const SizedBox(height: 8),
-                          Wrap(
-                            alignment: WrapAlignment.spaceAround,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _ReaderAction(
-                                icon: Icons.border_color_outlined,
-                                label: 'Surligner',
-                                color: mode.text,
-                                onTap: () => showNotIntegrated(
-                                  context,
-                                  'Surlignage',
-                                  'PDF-02',
-                                ),
-                              ),
-                              _ReaderAction(
-                                icon: Icons.translate,
-                                label: 'Traduire',
-                                color: mode.text,
-                                onTap: () => showNotIntegrated(
-                                  context,
-                                  'Traduction de sélection',
-                                  'TR-02',
-                                ),
-                              ),
-                              _ReaderAction(
-                                icon: Icons.sticky_note_2_outlined,
-                                label: 'Note',
-                                color: mode.text,
-                                onTap: () => showNotIntegrated(
-                                  context,
-                                  'Notes',
-                                  'PDF-02',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-              ),
+              Expanded(child: content),
               const _AudioPanel(),
             ],
           ),
         );
       },
+    );
+  }
+
+  void _showPageText(BuildContext context, String path, int page) {
+    final pdf = AppScope.of(context).engines.pdf;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        builder: (context, controller) => FutureBuilder<String>(
+          future: pdf.extractPageText(path, page),
+          builder: (context, snapshot) {
+            final theme = Theme.of(context);
+            final Widget body;
+            if (snapshot.connectionState != ConnectionState.done) {
+              body = const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              body = Text(
+                'Le texte de cette page n’a pas pu être lu.\n'
+                '${snapshot.error}',
+              );
+            } else if (snapshot.data!.isEmpty) {
+              body = const Text(
+                'Aucun texte sur cette page. S’il s’agit d’une page scannée, '
+                'la reconnaissance de texte (OCR) arrivera plus tard.',
+              );
+            } else {
+              body = SelectableText(
+                snapshot.data!,
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+              );
+            }
+            return ListView(
+              controller: controller,
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              children: [
+                Text(
+                  'Texte de la page $page',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                body,
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Texte de démonstration pour la bibliothèque d'exemple.
+class _SampleChapter extends StatelessWidget {
+  const _SampleChapter({required this.mode});
+
+  final ReaderMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      children: [
+        const SampleDataBanner(
+          message:
+              'Texte d’exemple : ce n’est pas l’extraction d’un vrai '
+              'PDF.',
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Chapter 3\nLearning',
+          style: theme.textTheme.headlineLarge?.copyWith(color: mode.text),
+        ),
+        const SizedBox(height: 20),
+        for (final paragraph in _sampleChapter) ...[
+          SelectableText(
+            paragraph,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: mode.text,
+              height: 1.6,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.spaceAround,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _ReaderAction(
+              icon: Icons.border_color_outlined,
+              label: 'Surligner',
+              color: mode.text,
+              onTap: () => showNotIntegrated(context, 'Surlignage', 'PDF-02'),
+            ),
+            _ReaderAction(
+              icon: Icons.translate,
+              label: 'Traduire',
+              color: mode.text,
+              onTap: () => showNotIntegrated(
+                context,
+                'Traduction de sélection',
+                'TR-02',
+              ),
+            ),
+            _ReaderAction(
+              icon: Icons.sticky_note_2_outlined,
+              label: 'Note',
+              color: mode.text,
+              onTap: () => showNotIntegrated(context, 'Notes', 'PDF-02'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -295,15 +394,15 @@ class _PagesNotRendered extends StatelessWidget {
         Icon(Icons.picture_as_pdf_outlined, size: 56, color: mode.text),
         const SizedBox(height: 16),
         Text(
-          'Affichage des pages pas encore disponible',
+          'Affichage des pages indisponible',
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(color: mode.text),
         ),
         const SizedBox(height: 12),
         Text(
           'Ce PDF est bien enregistré dans l’espace privé de Murmure '
-          '(${describeLibraryItem(item)}). Le rendu des pages et '
-          'l’extraction du texte arrivent avec le moteur PDF local.',
+          '(${describeLibraryItem(item)}), mais le moteur PDF local '
+          'n’est pas disponible dans cette version.',
           textAlign: TextAlign.center,
           style: style,
         ),

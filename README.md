@@ -4,16 +4,19 @@
 
 Lecture PDF à voix douce, transcription et traduction anglais ⇄ français, traitées sur le téléphone.
 
-**État : lots L0 et L2 (en partie).** Navigation, thème, logo, et une vraie bibliothèque locale (SQLite + import PDF en stockage privé). Aucun moteur local (PDF, OCR, voix, transcription, traduction) n'est encore intégré : l'application le dit à chaque endroit concerné. Voir `docs/CADRAGE_V1.md` pour le PRD, l'architecture, les risques et le plan.
+**État : lots L0, L2 et L3 (en partie).** Navigation, thème, logo, vraie bibliothèque locale (SQLite + import PDF en stockage privé) et lecteur PDF local (PDFium) avec reprise de page et extraction du texte. Les moteurs OCR, voix, transcription et traduction ne sont pas encore intégrés : l'application le dit à chaque endroit concerné. Voir `docs/CADRAGE_V1.md` pour le PRD, l'architecture, les risques et le plan.
 
 ## Lancer
 
 ```
 flutter pub get
 flutter analyze
-flutter test
+tool/fetch_pdfium.sh                                      # une fois, pour les tests du moteur PDF
+PDFIUM_PATH=.pdfium/lib/libpdfium.so flutter test
 flutter run
 ```
+
+Démonstration dans un navigateur (documents d'exemple) : `flutter run -d chrome -t lib/main_demo.dart`.
 
 Coordonnées de l'éditeur (facultatives, affichées dans À propos) :
 

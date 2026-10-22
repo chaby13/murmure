@@ -24,15 +24,17 @@ class AppDependencies {
   /// Configuration réelle : bibliothèque SQLite dans le dossier privé de
   /// l'application.
   static Future<AppDependencies> local() async {
+    const engines = EngineRegistry.current();
     final support = await getApplicationSupportDirectory();
     final library = await LocalLibraryRepository.open(
       databasePath: p.join(support.path, 'murmure.db'),
       documentsDir: Directory(p.join(support.path, 'documents')),
+      pdfEngine: engines.pdf,
     );
     return AppDependencies(
       library: library,
       settings: SettingsController(),
-      engines: const EngineRegistry.notIntegrated(),
+      engines: engines,
       picker: const SystemDocumentPicker(),
     );
   }
