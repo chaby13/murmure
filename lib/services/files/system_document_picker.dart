@@ -15,7 +15,7 @@ class SystemDocumentPicker implements DocumentPicker {
       type: FileType.custom,
       allowedExtensions: const ['pdf'],
     );
-    final file = result?.files.singleOrNull;
+    final file = result?.singleOrNull;
     final path = file?.path;
     if (file == null || path == null) return null;
     return PickedDocument(name: file.name, path: path);

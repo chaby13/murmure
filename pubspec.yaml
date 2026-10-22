@@ -11,13 +11,13 @@ environment:
 # Règle de confidentialité : toute nouvelle dépendance doit être auditée contre
 # les communications réseau avant d'être ajoutée (voir docs/CADRAGE_V1.md).
 dependencies:
-  file_picker: ^11.0.3
+  file_picker: ^13.1.0
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   go_router: ^17.0.0
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.2.2
   path: ^1.9.1
   path_provider: ^2.1.6
   pdfrx: ^2.10.0
