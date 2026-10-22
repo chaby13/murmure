@@ -1,0 +1,29 @@
+name: murmure
+description: "Murmure : lisez, écoutez, traduisez. En toute liberté. Application locale de Chabane DEV."
+publish_to: 'none'
+
+# Source unique du numéro de version affiché dans À propos (lu via package_info_plus).
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+
+# Règle de confidentialité : toute nouvelle dépendance doit être auditée contre
+# les communications réseau avant d'être ajoutée (voir docs/CADRAGE_V1.md).
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  go_router: ^17.0.0
+  package_info_plus: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/brand/
