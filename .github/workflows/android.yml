@@ -41,6 +41,13 @@ jobs:
       - name: Modèle de transcription
         run: tool/fetch_whisper_model.sh
 
+      # NDK demandé par whisper_ggml pour compiler whisper.cpp.
+      - name: NDK Android
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdkmanager" --licenses > /dev/null || true
+          "$sdkmanager" --install "ndk;29.0.13113456" > /dev/null
+
       - name: Compilation de l'APK
         run: flutter build apk --release
 
