@@ -1,4 +1,4 @@
-name: Android
+name: Android et Windows
 
 on:
   push:
@@ -68,3 +68,46 @@ jobs:
           gh release create apk-test murmure.apk --prerelease --target "$GITHUB_SHA" \
             --title "Murmure, version de test" \
             --notes "APK de test fabriqué automatiquement depuis le commit $GITHUB_SHA."
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Compilation Windows
+        run: |
+          flutter pub get
+          flutter build windows --release
+
+      - name: Préparation du dossier à télécharger
+        shell: pwsh
+        run: |
+          $out = "build/windows/x64/runner/Release"
+          # Bibliothèques Visual C++ incluses pour les PC qui ne les ont pas.
+          foreach ($dll in "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
+            Copy-Item "$env:WINDIR/System32/$dll" $out
+          }
+          Compress-Archive -Path "$out/*" -DestinationPath murmure-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: murmure-windows
+          path: murmure-windows.zip
+
+      - name: Mettre à jour la version de test Windows
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete windows-test --yes --cleanup-tag || true
+          gh release create windows-test murmure-windows.zip --prerelease --target "$GITHUB_SHA" \
+            --title "Murmure pour Windows, version de test" \
+            --notes "Dézipper puis lancer murmure.exe. Fabriqué depuis le commit $GITHUB_SHA."
