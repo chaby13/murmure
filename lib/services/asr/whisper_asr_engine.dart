@@ -8,6 +8,7 @@ import 'package:whisper_ggml/whisper_ggml.dart';
 
 import '../../domain/models/app_language.dart';
 import '../../domain/services/local_engines.dart';
+import 'wav_normalizer.dart';
 
 /// Transcription locale avec whisper.cpp. Le modèle « base » multilingue
 /// (quantifié q5_1, licence MIT) est embarqué dans l'application : rien
@@ -48,12 +49,26 @@ class WhisperAsrEngine implements AsrEngine {
     void Function(int percent)? onProgress,
   }) async {
     if (!isAvailable) throw EngineNotIntegratedException(label, ticket);
-    final modelPath = _modelPath ??= await _installModel();
+    final String modelPath;
+    try {
+      modelPath = _modelPath ??= await _installModel();
+    } catch (e) {
+      throw AsrException(
+        'Le moteur de transcription n’a pas pu être préparé.\nDétail : $e',
+      );
+    }
+    // Un WAV est remis au format exact attendu (16 kHz mono) par Murmure
+    // lui-même ; les autres formats passent par le convertisseur du moteur.
+    final normalized = File(
+      p.join(p.dirname(modelPath), 'transcription-en-cours.wav'),
+    );
     final converted = File('$audioPath.wav');
     try {
+      final input =
+          await normalizeWav(File(audioPath), normalized) ?? File(audioPath);
       final response = await const Whisper(model: WhisperModel.base).transcribe(
         transcribeRequest: TranscribeRequest(
-          audio: audioPath,
+          audio: input.path,
           language: language?.code ?? 'auto',
           threads: max(1, min(4, Platform.numberOfProcessors)),
           isNoTimestamps: true,
@@ -65,14 +80,15 @@ class WhisperAsrEngine implements AsrEngine {
         onProgress: onProgress,
       );
       return response.text.trim();
-    } catch (_) {
-      throw const AsrException(
-        'Ce fichier audio n’a pas pu être transcrit. Essayez un '
-        'enregistrement WAV, M4A ou MP3 non protégé.',
+    } catch (e) {
+      throw AsrException(
+        'Ce fichier audio n’a pas pu être transcrit.\nDétail : $e',
       );
     } finally {
-      // Copie convertie en WAV 16 kHz laissée par le moteur.
-      if (await converted.exists()) await converted.delete();
+      // Copies converties laissées par Murmure et par le moteur.
+      for (final f in [normalized, converted, File('${normalized.path}.wav')]) {
+        if (await f.exists()) await f.delete();
+      }
     }
   }
 
