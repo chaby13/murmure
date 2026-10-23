@@ -1,8 +1,9 @@
 import '../models/app_language.dart';
 
-/// Découpe le texte d'une page PDF en phrases à lire une par une.
-/// Recolle les mots coupés en fin de ligne et ignore les lignes vides.
-List<String> splitSentences(String text) {
+/// Découpe le texte d'une page PDF en paragraphes, chacun découpé en
+/// phrases à lire une par une. Recolle les mots coupés en fin de ligne et
+/// ignore les blocs sans lettres ni chiffres.
+List<List<String>> splitParagraphs(String text) {
   final cleaned = text
       .replaceAll('\r', '')
       .replaceAllMapped(
@@ -13,19 +14,25 @@ List<String> splitSentences(String text) {
       .replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' ')
       .replaceAll(RegExp(r'[ \t]+'), ' ');
 
-  final sentences = <String>[];
+  final paragraphs = <List<String>>[];
   for (final block in cleaned.split('\n\n')) {
-    final parts = block.split(RegExp(r'(?<=[.!?…])\s+(?=\S)'));
-    for (final part in parts) {
+    final sentences = <String>[];
+    for (final part in block.split(RegExp(r'(?<=[.!?…])\s+(?=\S)'))) {
       final sentence = part.trim();
       if (sentence.isNotEmpty &&
           RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(sentence)) {
         sentences.add(sentence);
       }
     }
+    if (sentences.isNotEmpty) paragraphs.add(sentences);
   }
-  return sentences;
+  return paragraphs;
 }
+
+/// Toutes les phrases de la page, dans l'ordre.
+List<String> splitSentences(String text) => [
+  for (final paragraph in splitParagraphs(text)) ...paragraph,
+];
 
 const _frenchWords = {
   'le',

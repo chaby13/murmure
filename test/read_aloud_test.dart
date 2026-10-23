@@ -26,6 +26,7 @@ class _FakePdf implements PdfEngine {
 
 class _FakeTts implements TtsEngine {
   final spoken = <(String, AppLanguage, double)>[];
+  final voicesUsed = <String?>[];
   Completer<void>? hold;
   Object? failure;
   int stops = 0;
@@ -38,13 +39,22 @@ class _FakeTts implements TtsEngine {
   bool get isAvailable => true;
 
   @override
+  Future<List<TtsVoice>> voices(AppLanguage language) async => [
+    for (final name
+        in language == AppLanguage.fr ? ['Hortense', 'Paul'] : ['Zira'])
+      TtsVoice(name: name, locale: '${language.code}-XX'),
+  ];
+
+  @override
   Future<void> speak(
     String text, {
     required AppLanguage language,
     double rate = 1,
+    String? voiceName,
   }) async {
     if (failure != null) throw failure!;
     spoken.add((text, language, rate));
+    voicesUsed.add(voiceName);
     final h = hold;
     if (h != null) await h.future;
   }
@@ -63,6 +73,8 @@ ReadAloudController _controller(
   List<String> pages, {
   int startPage = 1,
   void Function(int)? onPageChanged,
+  ReadAloudPreferences preferences = const ReadAloudPreferences(),
+  void Function(ReadAloudPreferences)? onPreferencesChanged,
 }) => ReadAloudController(
   tts: tts,
   pdf: _FakePdf(pages),
@@ -70,7 +82,16 @@ ReadAloudController _controller(
   pageCount: pages.length,
   startPage: startPage,
   onPageChanged: onPageChanged,
+  preferences: preferences,
+  onPreferencesChanged: onPreferencesChanged,
 );
+
+/// Lit une seule phrase puis met en pause.
+Future<void> _playOne(ReadAloudController c, _FakeTts tts) async {
+  tts.hold = Completer();
+  unawaited(c.play());
+  await pumpEventQueue();
+}
 
 void main() {
   group('splitSentences', () {
@@ -178,6 +199,90 @@ void main() {
       await c.play();
       expect(c.error, 'Aucune voix française hors ligne.');
       expect(c.isActive, isFalse);
+      c.dispose();
+    });
+
+    test('paragraphe suivant et précédent, puis page suivante', () async {
+      final tts = _FakeTts();
+      final pages = <int>[];
+      final c = _controller(tts, [
+        'Un. Deux.\n\nTrois. Quatre.\n\nCinq.',
+        'Page deux.',
+      ], onPageChanged: pages.add);
+
+      await c.skipParagraph(1);
+      expect(c.currentSentence, 'Trois.');
+      await c.skipParagraph(1);
+      expect(c.currentSentence, 'Cinq.');
+      await c.skipParagraph(-1);
+      expect(c.currentSentence, 'Trois.');
+      await c.skip(1);
+      expect(c.currentSentence, 'Quatre.');
+      // « Précédent » revient d'abord au début du paragraphe.
+      await c.skipParagraph(-1);
+      expect(c.currentSentence, 'Trois.');
+
+      await c.skipParagraph(1);
+      await c.skipParagraph(1);
+      expect(c.page, 2);
+      expect(pages, [2]);
+      c.dispose();
+    });
+
+    test(
+      'changer de page pendant la lecture continue sur la nouvelle',
+      () async {
+        final tts = _FakeTts();
+        final c = _controller(tts, ['Page un. Suite.', 'Page deux.']);
+        await _playOne(c, tts);
+        expect(tts.spoken.single.$1, 'Page un.');
+
+        tts.hold = null;
+        await c.skipPage(1);
+        expect(tts.spoken.map((s) => s.$1), ['Page un.', 'Page deux.']);
+        expect(c.status, ReadAloudStatus.finished);
+        c.dispose();
+      },
+    );
+
+    test(
+      'paragraphe précédent en haut de page revient à la page d’avant',
+      () async {
+        final tts = _FakeTts();
+        final c = _controller(tts, ['A.\n\nB. C.', 'D.'], startPage: 2);
+        await c.skipParagraph(-1);
+        expect(c.page, 1);
+        expect(c.currentSentence, 'B.');
+        c.dispose();
+      },
+    );
+
+    test('lire à partir d’une phrase touchée', () async {
+      final tts = _FakeTts();
+      final c = _controller(tts, ['Un. Deux. Trois.']);
+      await c.playFrom(1, 1);
+      expect(tts.spoken.map((s) => s.$1), ['Deux.', 'Trois.']);
+      c.dispose();
+    });
+
+    test('la voix choisie est utilisée et retenue', () async {
+      final tts = _FakeTts();
+      ReadAloudPreferences? saved;
+      final c = _controller(
+        tts,
+        ['Le chat est dans la maison avec nous.'],
+        preferences: const ReadAloudPreferences(speed: 0.9),
+        onPreferencesChanged: (p) => saved = p,
+      );
+      await c.loadVoices();
+      expect(c.voices.map((v) => v.name), ['Hortense', 'Paul']);
+      expect(c.voiceName, 'Hortense');
+
+      await c.setVoice('Paul');
+      await c.play();
+      expect(tts.voicesUsed.single, 'Paul');
+      expect(tts.spoken.single.$3, 0.9);
+      expect(saved!.voices, {AppLanguage.fr: 'Paul'});
       c.dispose();
     });
   });

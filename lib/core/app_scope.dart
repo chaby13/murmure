@@ -43,7 +43,9 @@ class AppDependencies {
     );
     return AppDependencies(
       library: library,
-      settings: SettingsController(),
+      settings: await SettingsController.load(
+        File(p.join(support.path, 'reglages.json')),
+      ),
       engines: engines,
       picker: const SystemDocumentPicker(),
       recorder: SystemAudioRecorder(),

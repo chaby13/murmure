@@ -57,14 +57,31 @@ class TtsException implements Exception {
   String toString() => message;
 }
 
+/// Une voix installée sur l'appareil.
+class TtsVoice {
+  const TtsVoice({required this.name, required this.locale, this.gender});
+
+  final String name;
+  final String locale;
+
+  /// « female », « male » ou null si inconnu.
+  final String? gender;
+}
+
 abstract interface class TtsEngine implements LocalEngine {
+  /// Voix hors ligne disponibles pour [language], la voix conseillée en
+  /// premier.
+  Future<List<TtsVoice>> voices(AppLanguage language);
+
   /// Prononce [text] et se termine quand la lecture est finie ou arrêtée.
-  /// [rate] vaut 1 pour la vitesse normale. Lève [TtsException] si aucune
-  /// voix hors ligne n'existe pour [language].
+  /// [rate] vaut 1 pour la vitesse normale. [voiceName] choisit une voix
+  /// de [voices] ; sinon la voix conseillée est utilisée. Lève
+  /// [TtsException] si aucune voix hors ligne n'existe pour [language].
   Future<void> speak(
     String text, {
     required AppLanguage language,
     double rate = 1,
+    String? voiceName,
   });
 
   Future<void> stop();

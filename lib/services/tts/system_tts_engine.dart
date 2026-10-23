@@ -12,8 +12,10 @@ class SystemTtsEngine implements TtsEngine {
   SystemTtsEngine([FlutterTts? tts]) : _tts = tts ?? FlutterTts();
 
   final FlutterTts _tts;
-  final Map<AppLanguage, Map<String, String>?> _voices = {};
+  final Map<AppLanguage, List<TtsVoice>> _voices = {};
   bool _ready = false;
+  String? _currentVoice;
+  double? _currentRate;
 
   @override
   String get label => 'Synthèse vocale FR/EN (voix de l’appareil)';
@@ -25,25 +27,72 @@ class SystemTtsEngine implements TtsEngine {
   bool get isAvailable => true;
 
   @override
+  Future<List<TtsVoice>> voices(AppLanguage language) async {
+    final cached = _voices[language];
+    if (cached != null) return cached;
+    final raw = await _tts.getVoices;
+    final found = <TtsVoice>[];
+    final seen = <String>{};
+    if (raw is List) {
+      for (final entry in raw) {
+        if (entry is! Map) continue;
+        final locale = '${entry['locale'] ?? ''}';
+        final name = '${entry['name'] ?? ''}';
+        final needsNetwork = '${entry['network_required'] ?? '0'}' == '1';
+        if (name.isEmpty || needsNetwork || !seen.add(name)) continue;
+        if (!locale.toLowerCase().startsWith(language.code)) continue;
+        final gender = '${entry['gender'] ?? ''}'.toLowerCase();
+        found.add(
+          TtsVoice(
+            name: name,
+            locale: locale,
+            gender: gender == 'female' || gender == 'male' ? gender : null,
+          ),
+        );
+      }
+    }
+    // Variante de France ou des États-Unis en premier.
+    final preferred = language == AppLanguage.fr ? 'fr-fr' : 'en-us';
+    int rank(TtsVoice v) =>
+        v.locale.toLowerCase().replaceAll('_', '-').startsWith(preferred)
+        ? 0
+        : 1;
+    found.sort((a, b) => rank(a).compareTo(rank(b)));
+    return _voices[language] = found;
+  }
+
+  @override
   Future<void> speak(
     String text, {
     required AppLanguage language,
     double rate = 1,
+    String? voiceName,
   }) async {
     if (!_ready) {
       await _tts.awaitSpeakCompletion(true);
       _ready = true;
     }
-    final voice = await _offlineVoice(language);
-    if (voice == null) {
+    final available = await voices(language);
+    if (available.isEmpty) {
       throw TtsException(
         'Aucune voix ${language == AppLanguage.fr ? 'française' : 'anglaise'} '
         'hors ligne n’est installée sur cet appareil. Ajoutez-en une dans '
         'les réglages de synthèse vocale du système.',
       );
     }
-    await _tts.setVoice(voice);
-    await _tts.setSpeechRate(_platformRate(rate));
+    final voice = available.firstWhere(
+      (v) => v.name == voiceName,
+      orElse: () => available.first,
+    );
+    if (voice.name != _currentVoice) {
+      await _tts.setVoice({'name': voice.name, 'locale': voice.locale});
+      _currentVoice = voice.name;
+    }
+    final platformRate = _platformRate(rate);
+    if (platformRate != _currentRate) {
+      await _tts.setSpeechRate(platformRate);
+      _currentRate = platformRate;
+    }
     await _tts.speak(text);
   }
 
@@ -52,30 +101,10 @@ class SystemTtsEngine implements TtsEngine {
     await _tts.stop();
   }
 
-  Future<Map<String, String>?> _offlineVoice(AppLanguage language) async {
-    if (_voices.containsKey(language)) return _voices[language];
-    final raw = await _tts.getVoices;
-    Map<String, String>? found;
-    if (raw is List) {
-      for (final entry in raw) {
-        if (entry is! Map) continue;
-        final locale = '${entry['locale'] ?? ''}'.toLowerCase();
-        final name = '${entry['name'] ?? ''}';
-        final needsNetwork = '${entry['network_required'] ?? '0'}' == '1';
-        if (name.isEmpty || needsNetwork) continue;
-        if (!locale.startsWith(language.code)) continue;
-        found = {'name': name, 'locale': '${entry['locale']}'};
-        // Préfère la variante de France ou des États-Unis.
-        if (locale.contains(language == AppLanguage.fr ? 'fr' : 'us')) break;
-      }
-    }
-    _voices[language] = found;
-    return found;
-  }
-
-  /// La vitesse « normale » n'a pas la même valeur selon la plateforme.
+  /// Pour flutter_tts, la vitesse normale vaut 0,5 sur toutes les
+  /// plateformes (Android la double, Windows lui ajoute 0,5).
   static double _platformRate(double rate) {
-    if (Platform.isIOS || Platform.isMacOS) return (0.5 * rate).clamp(0.1, 1.0);
-    return rate.clamp(0.25, 3.0);
+    final max = Platform.isIOS || Platform.isMacOS ? 1.0 : 1.5;
+    return (0.5 * rate).clamp(0.1, max);
   }
 }

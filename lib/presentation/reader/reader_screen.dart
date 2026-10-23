@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../../core/app_scope.dart';
 import '../../core/theme/murmure_colors.dart';
 import '../../domain/models/library_item.dart';
 import '../../domain/services/library_repository.dart';
+import '../../domain/text/reading_text.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/library_item_icon.dart';
 import '../widgets/not_integrated.dart';
@@ -58,7 +60,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       onPageChanged: (page) {
         if (_viewer.isReady) _viewer.goToPage(pageNumber: page);
       },
-    );
+      preferences: deps.settings.readAloud,
+      onPreferencesChanged: (value) => deps.settings.readAloud = value,
+    )..loadVoices();
   }
 
   @override
@@ -138,7 +142,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           content = _PagesNotRendered(item: item, mode: mode);
         }
 
-        return Scaffold(
+        final reader = _reader;
+        final scaffold = Scaffold(
           backgroundColor: mode.background,
           appBar: AppBar(
             backgroundColor: mode.background,
@@ -192,6 +197,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ],
           ),
         );
+        if (reader == null) return scaffold;
+        // Raccourcis clavier (Windows) : Espace lecture/pause, ← → paragraphe,
+        // Page précédente / Page suivante pour changer de page.
+        return CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.space): reader.togglePlay,
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+                reader.skipParagraph(-1),
+            const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+                reader.skipParagraph(1),
+            const SingleActivator(LogicalKeyboardKey.pageUp): () =>
+                reader.skipPage(-1),
+            const SingleActivator(LogicalKeyboardKey.pageDown): () =>
+                reader.skipPage(1),
+          },
+          child: Focus(autofocus: true, child: scaffold),
+        );
       },
     );
   }
@@ -221,6 +243,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
               body = const Text(
                 'Aucun texte sur cette page. S’il s’agit d’une page scannée, '
                 'la reconnaissance de texte (OCR) arrivera plus tard.',
+              );
+            } else if (_reader case final reader?) {
+              // Toucher une phrase lance la lecture à partir d'elle.
+              final sentences = splitSentences(snapshot.data!);
+              body = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Touchez une phrase pour l’écouter à partir de là.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  for (var i = 0; i < sentences.length; i++)
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        Navigator.pop(context);
+                        reader.playFrom(page, i);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 4,
+                        ),
+                        child: Text(
+                          sentences[i],
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               );
             } else {
               body = SelectableText(
