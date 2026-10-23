@@ -15,8 +15,9 @@ import 'support/fixtures.dart';
 
 /// SQLite et les fichiers répondent hors de l'horloge simulée du test :
 /// on alterne temps réel et images jusqu'à ce que les opérations aboutissent.
-Future<void> settleIo(WidgetTester tester) async {
-  for (var i = 0; i < 10; i++) {
+/// [until] prolonge l'attente (5 s au plus) sur une machine lente.
+Future<void> settleIo(WidgetTester tester, {bool Function()? until}) async {
+  for (var i = 0; i < 10 || (until != null && !until() && i < 170); i++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 30)),
     );
@@ -96,7 +97,7 @@ void main() {
 
     // Ouvrir : le lecteur dit honnêtement que le rendu n'est pas prêt.
     await tester.tap(find.text('English Stories.pdf'));
-    await settleIo(tester);
+    await settleIo(tester, until: () => repo.lastRead != null);
     expect(find.text('Affichage des pages indisponible'), findsOneWidget);
     expect(repo.lastRead?.title, 'English Stories.pdf');
     await tester.tap(find.byTooltip('Retour'));
