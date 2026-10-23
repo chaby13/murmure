@@ -18,6 +18,7 @@ class AsrEngineNotIntegrated implements AsrEngine {
   Future<String> transcribe(
     String audioPath, {
     AppLanguage? language,
+    List<String> vocabulary = const [],
     void Function(int percent)? onProgress,
   }) => throw EngineNotIntegratedException(label, ticket);
 }

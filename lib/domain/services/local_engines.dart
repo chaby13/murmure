@@ -106,11 +106,13 @@ class AsrException implements Exception {
 
 abstract interface class AsrEngine implements LocalEngine {
   /// Transcrit [audioPath]. [language] null = détection automatique.
-  /// [onProgress] reçoit l'avancement de 0 à 100. Lève [AsrException] si
-  /// le son ne peut pas être transcrit.
+  /// [vocabulary] : noms propres et mots rares à reconnaître (dictionnaire
+  /// personnel). [onProgress] reçoit l'avancement de 0 à 100. Lève
+  /// [AsrException] si le son ne peut pas être transcrit.
   Future<String> transcribe(
     String audioPath, {
     AppLanguage? language,
+    List<String> vocabulary = const [],
     void Function(int percent)? onProgress,
   });
 }

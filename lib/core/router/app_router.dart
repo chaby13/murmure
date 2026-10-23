@@ -6,6 +6,7 @@ import '../../presentation/discover/discover_screen.dart';
 import '../../presentation/home/home_screen.dart';
 import '../../presentation/library/library_screen.dart';
 import '../../presentation/reader/reader_screen.dart';
+import '../../presentation/settings/personal_dictionary_screen.dart';
 import '../../presentation/settings/settings_screen.dart';
 import '../../presentation/shell/main_shell.dart';
 import '../../presentation/transcription/transcript_screen.dart';
@@ -19,6 +20,7 @@ abstract final class AppRoutes {
   static const settings = '/parametres';
   static const about = '/parametres/a-propos';
   static const privacy = '/parametres/confidentialite';
+  static const dictionary = '/parametres/dictionnaire';
 
   static String reader(String id) => '/lecteur/$id';
   static String transcript(String id) => '/texte/$id';
@@ -85,6 +87,10 @@ GoRouter createRouter() => GoRouter(
         GoRoute(
           path: 'confidentialite',
           builder: (context, state) => const PrivacyPolicyScreen(),
+        ),
+        GoRoute(
+          path: 'dictionnaire',
+          builder: (context, state) => const PersonalDictionaryScreen(),
         ),
       ],
     ),

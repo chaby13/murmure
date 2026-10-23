@@ -17,6 +17,7 @@ import '../services/engine_registry.dart';
 import '../services/tts/piper_tts_engine.dart';
 import '../services/files/system_document_picker.dart';
 import '../services/links/browser_link_opener.dart';
+import '../services/spelling/dictionaries.dart';
 import '../services/transcription/transcription_jobs.dart';
 import 'settings/settings_controller.dart';
 
@@ -29,7 +30,12 @@ class AppDependencies {
     required this.picker,
     this.recorder = const NoAudioRecorder(),
     this.links = const BrowserLinkOpener(),
-  }) : transcriptions = TranscriptionJobs(library: library, asr: engines.asr);
+  }) : transcriptions = TranscriptionJobs(
+         library: library,
+         asr: engines.asr,
+         vocabulary: () => settings.personalWords,
+       ),
+       spelling = SpellingDictionaries();
 
   /// Configuration réelle : bibliothèque SQLite dans le dossier privé de
   /// l'application.
@@ -76,6 +82,7 @@ class AppDependencies {
   final AudioRecorderService recorder;
   final LinkOpener links;
   final TranscriptionJobs transcriptions;
+  final SpellingDictionaries spelling;
 }
 
 DatabaseFactory _desktopDatabase() {

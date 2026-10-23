@@ -17,6 +17,10 @@ class SettingsController extends ChangeNotifier {
   static const defaultReadSpeed = 0.9;
 
   final File? file;
+  Future<void> _writing = Future.value();
+
+  /// Se termine quand les derniers changements sont écrits sur le disque.
+  Future<void> get saved => _writing;
   ThemeMode _themeMode = ThemeMode.system;
   ReaderMode _readerMode = ReaderMode.light;
   ReadAloudPreferences _readAloud = const ReadAloudPreferences(
@@ -34,6 +38,31 @@ class SettingsController extends ChangeNotifier {
       }
     } catch (_) {}
     return settings;
+  }
+
+  List<String> _personalWords = const [];
+
+  /// Dictionnaire personnel : mots acceptés par le correcteur et donnés à
+  /// la transcription (noms propres, vocabulaire de métier).
+  List<String> get personalWords => _personalWords;
+
+  void addPersonalWord(String word) {
+    final w = word.trim();
+    if (w.isEmpty ||
+        _personalWords.any((x) => x.toLowerCase() == w.toLowerCase())) {
+      return;
+    }
+    _personalWords = [..._personalWords, w]
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    _changed();
+  }
+
+  void removePersonalWord(String word) {
+    _personalWords = [
+      for (final w in _personalWords)
+        if (w != word) w,
+    ];
+    _changed();
   }
 
   ThemeMode get themeMode => _themeMode;
@@ -67,6 +96,13 @@ class SettingsController extends ChangeNotifier {
 
     _themeMode = byName(ThemeMode.values, json['theme']) ?? _themeMode;
     _readerMode = byName(ReaderMode.values, json['reader']) ?? _readerMode;
+    final words = json['personalWords'];
+    if (words is List) {
+      _personalWords = [
+        for (final w in words)
+          if (w is String && w.trim().isNotEmpty) w.trim(),
+      ];
+    }
     final speed = json['readSpeed'];
     final voices = json['voices'];
     _readAloud = ReadAloudPreferences(
@@ -90,7 +126,12 @@ class SettingsController extends ChangeNotifier {
       'voices': {
         for (final e in _readAloud.voices.entries) e.key.name: e.value,
       },
+      'personalWords': _personalWords,
     };
-    file.writeAsString(jsonEncode(json)).ignore();
+    // Écritures l'une après l'autre : la dernière gagne toujours.
+    final content = jsonEncode(json);
+    _writing = _writing
+        .then((_) => file.writeAsString(content, flush: true))
+        .then((_) {}, onError: (_) {});
   }
 }

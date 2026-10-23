@@ -10,6 +10,7 @@ import 'package:murmure/domain/models/app_language.dart';
 import 'package:murmure/domain/models/library_item.dart';
 import 'package:murmure/domain/models/picked_document.dart';
 import 'package:murmure/domain/services/local_engines.dart';
+import 'package:murmure/services/asr/whisper_asr_engine.dart';
 import 'package:murmure/services/engine_registry.dart';
 import 'package:murmure/services/ocr/ocr_engine_not_integrated.dart';
 import 'package:murmure/services/pdf/pdf_engine_not_integrated.dart';
@@ -92,6 +93,43 @@ void main() {
       expect(asr.calls.single.$2, AppLanguage.en);
       expect(jobs.current!.status, TranscriptionStatus.done);
       await repo.close();
+    });
+
+    test(
+      'dictionnaire personnel transmis, typographie remise au propre',
+      () async {
+        final repo = await open();
+        final asr = FakeAsrEngine()..text = 'bonjour chabane , ça va ?';
+        final jobs = TranscriptionJobs(
+          library: repo,
+          asr: asr,
+          vocabulary: () => ['Chabane'],
+        );
+        final audio = await repo.addAudio(
+          writeWav(root, 'b.wav').path,
+          title: 'Note.wav',
+        );
+        final result = await jobs.transcribe(audio, language: AppLanguage.fr);
+        expect(asr.vocabularies.single, ['Chabane']);
+        expect(
+          await repo.readText(result!.id),
+          'Bonjour Chabane, ça va\u202f?',
+        );
+        await repo.close();
+      },
+    );
+
+    test('la phrase d’exemple donnée à Whisper contient les mots perso', () {
+      final fr = WhisperAsrEngine.promptFor(AppLanguage.fr, [
+        'Chabane',
+        'Murmure',
+      ]);
+      expect(fr, startsWith('Bonjour.'));
+      expect(fr, endsWith('Chabane, Murmure.'));
+      expect(
+        WhisperAsrEngine.promptFor(AppLanguage.en, []),
+        startsWith('Hello.'),
+      );
     });
 
     test('un audio sans parole est signalé, rien n’est inventé', () async {

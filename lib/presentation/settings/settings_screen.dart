@@ -45,23 +45,28 @@ class SettingsScreen extends StatelessWidget {
               selected: {settings.readerMode},
               onSelectionChanged: (value) => settings.readerMode = value.first,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Ces choix ne sont pas encore mémorisés après fermeture de l’app.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            const _SectionTitle('Voix et lecture'),
+            const ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.record_voice_over_outlined),
+              title: Text('Voix et vitesse'),
+              subtitle: Text(
+                'Se règlent dans le lecteur, pendant la lecture, et sont '
+                'retenues pour la suite.',
               ),
             ),
-            const _SectionTitle('Voix et lecture'),
+            const _SectionTitle('Texte et orthographe'),
             ListTile(
-              enabled: false,
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.record_voice_over_outlined),
-              title: const Text('Profils de voix, vitesse, pauses'),
+              leading: const Icon(Icons.spellcheck),
+              title: const Text('Dictionnaire personnel'),
               subtitle: Text(
-                'Disponibles quand la synthèse locale sera intégrée '
-                '(${deps.engines.tts.ticket}).',
+                settings.personalWords.isEmpty
+                    ? 'Noms propres et mots de métier à reconnaître'
+                    : '${settings.personalWords.length} mot(s)',
               ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(AppRoutes.dictionary),
             ),
             const _SectionTitle('Moteurs locaux'),
             for (final engine in deps.engines.all)

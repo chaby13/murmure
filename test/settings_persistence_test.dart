@@ -25,13 +25,27 @@ void main() {
         speed: 0.8,
         voices: {AppLanguage.fr: 'Microsoft Paul'},
       );
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await settings.saved;
 
     final again = await SettingsController.load(file);
     expect(again.themeMode, ThemeMode.dark);
     expect(again.readerMode, ReaderMode.sepia);
     expect(again.readAloud.speed, 0.8);
     expect(again.readAloud.voices, {AppLanguage.fr: 'Microsoft Paul'});
+  });
+
+  test('le dictionnaire personnel est retrouvé, sans doublon', () async {
+    final file = File(p.join(dir.path, 'reglages.json'));
+    final settings = await SettingsController.load(file);
+    settings
+      ..addPersonalWord('Murmure')
+      ..addPersonalWord(' chabane ')
+      ..addPersonalWord('murmure');
+    expect(settings.personalWords, ['chabane', 'Murmure']);
+    settings.removePersonalWord('chabane');
+    await settings.saved;
+    final again = await SettingsController.load(file);
+    expect(again.personalWords, ['Murmure']);
   });
 
   test('un fichier abîmé redonne les réglages par défaut', () async {

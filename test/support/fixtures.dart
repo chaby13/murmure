@@ -64,6 +64,7 @@ class FakeAsrEngine implements AsrEngine {
   String text = 'Bonjour, ceci est un test.';
   Object? failure;
   final calls = <(String, AppLanguage?)>[];
+  final vocabularies = <List<String>>[];
 
   @override
   String get label => 'Transcription FR/EN';
@@ -76,9 +77,11 @@ class FakeAsrEngine implements AsrEngine {
   Future<String> transcribe(
     String audioPath, {
     AppLanguage? language,
+    List<String> vocabulary = const [],
     void Function(int percent)? onProgress,
   }) async {
     calls.add((audioPath, language));
+    vocabularies.add(vocabulary);
     onProgress?.call(50);
     if (failure != null) throw failure!;
     return text;

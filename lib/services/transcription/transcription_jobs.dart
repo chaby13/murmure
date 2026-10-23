@@ -5,6 +5,8 @@ import '../../domain/models/app_language.dart';
 import '../../domain/models/library_item.dart';
 import '../../domain/services/library_repository.dart';
 import '../../domain/services/local_engines.dart';
+import '../../domain/text/text_analysis.dart';
+import '../../domain/text/typography.dart';
 
 enum TranscriptionStatus { running, done, failed }
 
@@ -32,10 +34,17 @@ class TranscriptionJob {
 /// Lance les transcriptions une par une et range le texte obtenu dans la
 /// bibliothèque. Survit aux changements d'onglet.
 class TranscriptionJobs extends ChangeNotifier {
-  TranscriptionJobs({required this.library, required this.asr});
+  TranscriptionJobs({
+    required this.library,
+    required this.asr,
+    this.vocabulary,
+  });
 
   final LibraryRepository library;
   final AsrEngine asr;
+
+  /// Mots du dictionnaire personnel, à reconnaître en priorité.
+  final List<String> Function()? vocabulary;
 
   TranscriptionJob? _current;
   TranscriptionJob? get current => _current;
@@ -59,9 +68,11 @@ class TranscriptionJobs extends ChangeNotifier {
       if (file == null) {
         throw const AsrException('Le fichier audio est introuvable.');
       }
-      final text = await asr.transcribe(
+      final words = vocabulary?.call() ?? const <String>[];
+      final raw = await asr.transcribe(
         file.path,
         language: language,
+        vocabulary: words,
         onProgress: (percent) => _set(
           TranscriptionJob(
             audioTitle: audio.title,
@@ -70,6 +81,21 @@ class TranscriptionJobs extends ChangeNotifier {
           ),
         ),
       );
+      // Typographie remise au propre : majuscules, espaces, guillemets.
+      var text = raw.trim().isEmpty
+          ? ''
+          : fixTypography(raw, language ?? TextAnalysis.languageOf(raw));
+      // Les mots du dictionnaire personnel gardent leur écriture exacte.
+      for (final w in words) {
+        text = text.replaceAll(
+          RegExp(
+            '(?<![\\p{L}])${RegExp.escape(w)}(?![\\p{L}])',
+            caseSensitive: false,
+            unicode: true,
+          ),
+          w,
+        );
+      }
       if (text.isEmpty) {
         throw const AsrException(
           'Aucune parole n’a été reconnue dans cet audio.',

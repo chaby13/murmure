@@ -44,3 +44,5 @@ flutter:
     - assets/models/
     # Voix naturelles, ajoutées par tool/fetch_voices.sh.
     - assets/voices/
+    # Listes de mots du correcteur, construites par tool/build_dictionaries.py.
+    - assets/dictionaries/

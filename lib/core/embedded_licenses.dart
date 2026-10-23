@@ -23,5 +23,18 @@ void registerEmbeddedLicenses() {
       'Modèle de reconnaissance vocale Whisper « base » d’OpenAI, licence '
       'MIT, converti et quantifié (q5_1) pour whisper.cpp.',
     );
+    yield const LicenseEntryWithLineBreaks(
+      ['Détecteur de parole Silero'],
+      'Modèle Silero VAD v5.1.2 (licence MIT), converti pour whisper.cpp : '
+      'il retire les silences avant la transcription.',
+    );
+    yield const LicenseEntryWithLineBreaks(
+      ['Dictionnaires du correcteur'],
+      'Français : dictionnaire Hunspell « classique » 7.0 de Dicollecte '
+      '(Olivier R., licence MPL 2.0). Anglais : dictionnaire Hunspell '
+      'en_US de SCOWL (Kevin Atkinson, licence libre de type MIT/BSD). '
+      'Formes classées par fréquence avec les listes FrequencyWords '
+      '(Hermit Dave, d’après OpenSubtitles, CC-BY-SA 4.0).',
+    );
   });
 }
