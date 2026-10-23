@@ -3,10 +3,12 @@ import 'package:pdfrx/pdfrx.dart';
 
 import 'app.dart';
 import 'core/app_scope.dart';
+import 'core/embedded_licenses.dart';
 import 'presentation/startup_error_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerEmbeddedLicenses();
   try {
     await pdfrxFlutterInitialize();
     final dependencies = await AppDependencies.local();

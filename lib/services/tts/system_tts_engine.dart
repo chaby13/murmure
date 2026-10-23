@@ -97,6 +97,14 @@ class SystemTtsEngine implements TtsEngine {
   }
 
   @override
+  void prepare(
+    String text, {
+    required AppLanguage language,
+    double rate = 1,
+    String? voiceName,
+  }) {}
+
+  @override
   Future<void> stop() async {
     await _tts.stop();
   }

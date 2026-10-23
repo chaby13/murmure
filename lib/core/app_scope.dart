@@ -13,6 +13,7 @@ import '../domain/services/library_repository.dart';
 import '../services/asr/whisper_asr_engine.dart';
 import '../services/audio/system_audio_recorder.dart';
 import '../services/engine_registry.dart';
+import '../services/tts/piper_tts_engine.dart';
 import '../services/files/system_document_picker.dart';
 import '../services/transcription/transcription_jobs.dart';
 import 'settings/settings_controller.dart';
@@ -30,7 +31,10 @@ class AppDependencies {
   /// Configuration réelle : bibliothèque SQLite dans le dossier privé de
   /// l'application.
   static Future<AppDependencies> local() async {
-    final engines = EngineRegistry.current(asr: await WhisperAsrEngine.load());
+    final engines = EngineRegistry.current(
+      asr: await WhisperAsrEngine.load(),
+      naturalVoices: await PiperTtsEngine.load(),
+    );
     final support = await getApplicationSupportDirectory();
     final library = await LocalLibraryRepository.open(
       databasePath: p.join(support.path, 'murmure.db'),

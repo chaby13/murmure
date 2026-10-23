@@ -84,6 +84,14 @@ abstract interface class TtsEngine implements LocalEngine {
     String? voiceName,
   });
 
+  /// Prépare à l'avance la phrase suivante, si le moteur en tire profit.
+  void prepare(
+    String text, {
+    required AppLanguage language,
+    double rate = 1,
+    String? voiceName,
+  });
+
   Future<void> stop();
 }
 

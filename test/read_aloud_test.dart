@@ -59,6 +59,16 @@ class _FakeTts implements TtsEngine {
     if (h != null) await h.future;
   }
 
+  final prepared = <String>[];
+
+  @override
+  void prepare(
+    String text, {
+    required AppLanguage language,
+    double rate = 1,
+    String? voiceName,
+  }) => prepared.add(text);
+
   @override
   Future<void> stop() async {
     stops++;

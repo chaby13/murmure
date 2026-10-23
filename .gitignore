@@ -50,3 +50,5 @@ app.*.map.json
 
 # Modèle Whisper téléchargé par tool/fetch_whisper_model.sh (non versionné).
 /assets/models/*.bin
+/assets/voices/*
+!/assets/voices/.gitkeep

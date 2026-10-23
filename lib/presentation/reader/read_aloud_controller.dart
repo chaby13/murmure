@@ -124,6 +124,14 @@ class ReadAloudController extends ChangeNotifier {
           continue;
         }
         _set(ReadAloudStatus.playing);
+        if (_index + 1 < sentences.length) {
+          tts.prepare(
+            sentences[_index + 1],
+            language: language,
+            rate: _speed,
+            voiceName: voiceName,
+          );
+        }
         await tts.speak(
           sentences[_index],
           language: language,

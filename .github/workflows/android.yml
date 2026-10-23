@@ -38,8 +38,10 @@ jobs:
           tool/fetch_pdfium.sh
           PDFIUM_PATH=.pdfium/lib/libpdfium.so flutter test
 
-      - name: Modèle de transcription
-        run: tool/fetch_whisper_model.sh
+      - name: Modèle de transcription et voix
+        run: |
+          tool/fetch_whisper_model.sh
+          tool/fetch_voices.sh
 
       # NDK demandé par whisper_ggml pour compiler whisper.cpp.
       - name: NDK Android
@@ -97,9 +99,11 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Modèle de transcription
+      - name: Modèle de transcription et voix
         shell: bash
-        run: tool/fetch_whisper_model.sh
+        run: |
+          tool/fetch_whisper_model.sh
+          tool/fetch_voices.sh
 
       - name: Compilation Windows
         run: |
