@@ -14,7 +14,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     (
       'Ce que Murmure traite',
       'Les PDF que vous importez, vos enregistrements audio, les fichiers '
-          'audio importés, les transcriptions et les traductions.',
+          'audio importés et les transcriptions.',
     ),
     (
       'Où ces données sont traitées',
@@ -25,7 +25,14 @@ class PrivacyPolicyScreen extends StatelessWidget {
     (
       'Ce que Murmure ne fait pas',
       'Pas de publicité, pas d’analytique, pas d’envoi de vos documents, '
-          'audios, textes ou traductions vers un serveur.',
+          'audios ou textes vers un serveur.',
+    ),
+    (
+      'Liens vers des sites externes',
+      'L’onglet Découvrir propose des liens vers des radios et des '
+          'bibliothèques gratuites. Ils s’ouvrent dans votre navigateur, '
+          'qui se connecte alors à internet ; Murmure lui-même ne se '
+          'connecte jamais et ne transmet rien à ces sites.',
     ),
     (
       'Vos droits',

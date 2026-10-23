@@ -22,8 +22,8 @@ void main() {
     await tapTab(tester, 'Transcrire');
     expect(find.widgetWithText(AppBar, 'Transcription'), findsOneWidget);
 
-    await tapTab(tester, 'Traduire');
-    expect(find.widgetWithText(AppBar, 'Traduction'), findsOneWidget);
+    await tapTab(tester, 'Découvrir');
+    expect(find.widgetWithText(AppBar, 'Découvrir'), findsOneWidget);
 
     await tapTab(tester, 'Accueil');
     expect(find.text('Bonjour'), findsOneWidget);

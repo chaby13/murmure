@@ -1,8 +1,8 @@
 # Murmure
 
-*Lisez, écoutez, traduisez. En toute liberté.* Une application Chabane DEV.
+*Lisez, écoutez. En toute liberté.* Une application Chabane DEV.
 
-Lecture PDF à voix douce, transcription et traduction anglais ⇄ français, traitées sur le téléphone.
+Lecture PDF à voix douce et transcription, traitées sur le téléphone. L'onglet Découvrir propose des liens vers des radios, des livres et des livres audio gratuits, ouverts dans le navigateur.
 
 **État : lots L0, L2 et L3 (en partie).** Navigation, thème, logo, vraie bibliothèque locale (SQLite + import PDF en stockage privé) et lecteur PDF local (PDFium) avec reprise de page et extraction du texte. Les moteurs OCR, voix, transcription et traduction ne sont pas encore intégrés : l'application le dit à chaque endroit concerné. Voir `docs/CADRAGE_V1.md` pour le PRD, l'architecture, les risques et le plan.
 

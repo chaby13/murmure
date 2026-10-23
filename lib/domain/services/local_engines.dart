@@ -12,8 +12,7 @@ class EngineNotIntegratedException implements Exception {
   String toString() => '$engine : moteur local non intégré (ticket $ticket).';
 }
 
-/// Contrat commun des moteurs embarqués (PDF, OCR, voix, transcription,
-/// traduction). Tous s'exécutent sur l'appareil, sans réseau.
+/// Contrat commun des moteurs embarqués (PDF, OCR, voix, transcription). Tous s'exécutent sur l'appareil, sans réseau.
 abstract interface class LocalEngine {
   /// Nom affiché dans Paramètres → Moteurs locaux.
   String get label;
@@ -113,13 +112,5 @@ abstract interface class AsrEngine implements LocalEngine {
     String audioPath, {
     AppLanguage? language,
     void Function(int percent)? onProgress,
-  });
-}
-
-abstract interface class TranslationEngine implements LocalEngine {
-  Future<String> translate(
-    String text, {
-    required AppLanguage from,
-    required AppLanguage to,
   });
 }

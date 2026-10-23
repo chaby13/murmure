@@ -14,7 +14,6 @@ import 'package:murmure/services/engine_registry.dart';
 import 'package:murmure/services/ocr/ocr_engine_not_integrated.dart';
 import 'package:murmure/services/pdf/pdf_engine_not_integrated.dart';
 import 'package:murmure/services/transcription/transcription_jobs.dart';
-import 'package:murmure/services/translation/translation_engine_not_integrated.dart';
 import 'package:murmure/services/tts/tts_engine_not_integrated.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -156,7 +155,6 @@ void main() {
             ocr: const OcrEngineNotIntegrated(),
             tts: const TtsEngineNotIntegrated(),
             asr: asr,
-            translation: const TranslationEngineNotIntegrated(),
           ),
           picker: picker,
           recorder: recorder,
@@ -235,7 +233,6 @@ void main() {
             ocr: const OcrEngineNotIntegrated(),
             tts: const TtsEngineNotIntegrated(),
             asr: asr,
-            translation: const TranslationEngineNotIntegrated(),
           ),
           picker: picker,
         ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Barre de navigation principale : Accueil, Bibliothèque, Transcrire,
-/// Traduire. Le lecteur et les paramètres s'ouvrent par-dessus.
+/// Découvrir. Le lecteur et les paramètres s'ouvrent par-dessus.
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.shell});
 
@@ -33,9 +33,9 @@ class MainShell extends StatelessWidget {
             label: 'Transcrire',
           ),
           NavigationDestination(
-            icon: Icon(Icons.translate_outlined),
-            selectedIcon: Icon(Icons.translate),
-            label: 'Traduire',
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Découvrir',
           ),
         ],
       ),

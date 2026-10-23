@@ -6,7 +6,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 /// Monte l'application complète avec les dépendances du squelette, sur un
 /// écran de téléphone (390 × 844).
-Future<AppDependencies> pumpMurmure(WidgetTester tester) async {
+Future<AppDependencies> pumpMurmure(
+  WidgetTester tester, {
+  AppDependencies? dependencies,
+}) async {
   PackageInfo.setMockInitialValues(
     appName: 'Murmure',
     packageName: 'dev.chabane.murmure',
@@ -18,7 +21,7 @@ Future<AppDependencies> pumpMurmure(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
-  final deps = AppDependencies.sample();
+  final deps = dependencies ?? AppDependencies.sample();
   await tester.pumpWidget(
     AppScope(dependencies: deps, child: const MurmureApp()),
   );

@@ -19,14 +19,6 @@ void main() {
   test('les moteurs non intégrés refusent au lieu de simuler', () {
     const engines = EngineRegistry.notIntegrated();
     expect(
-      () => engines.translation.translate(
-        'Hello',
-        from: AppLanguage.en,
-        to: AppLanguage.fr,
-      ),
-      throwsA(isA<EngineNotIntegratedException>()),
-    );
-    expect(
       () => engines.asr.transcribe('a.wav'),
       throwsA(isA<EngineNotIntegratedException>()),
     );
@@ -41,33 +33,6 @@ void main() {
     expect(
       () => engines.ocr.recognizePage('a.pdf', 0),
       throwsA(isA<EngineNotIntegratedException>()),
-    );
-  });
-
-  testWidgets('Traduire ne produit aucune fausse traduction', (tester) async {
-    await pumpMurmure(tester);
-    await tester.tap(
-      find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text('Traduire'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    const original = 'Learning a new language opens new doors.';
-    await tester.enterText(find.byType(TextField), original);
-    await tester.pump();
-    await tester.tap(find.widgetWithText(FilledButton, 'Traduire'));
-    await tester.pumpAndSettle();
-
-    final output = find.byKey(const Key('translation-output'));
-    expect(
-      find.descendant(of: output, matching: find.textContaining('non intégré')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: output, matching: find.byType(SelectableText)),
-      findsNothing,
     );
   });
 

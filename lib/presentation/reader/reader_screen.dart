@@ -349,16 +349,6 @@ class _SampleChapter extends StatelessWidget {
               onTap: () => showNotIntegrated(context, 'Surlignage', 'PDF-02'),
             ),
             _ReaderAction(
-              icon: Icons.translate,
-              label: 'Traduire',
-              color: mode.text,
-              onTap: () => showNotIntegrated(
-                context,
-                'Traduction de sélection',
-                'TR-02',
-              ),
-            ),
-            _ReaderAction(
               icon: Icons.sticky_note_2_outlined,
               label: 'Note',
               color: mode.text,

@@ -1,4 +1,4 @@
-/// Langues prises en charge par Murmure (lecture, transcription, traduction).
+/// Langues prises en charge par Murmure (lecture, transcription).
 enum AppLanguage {
   fr('Français', 'fr'),
   en('Anglais', 'en');

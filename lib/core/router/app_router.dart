@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../presentation/about/about_screen.dart';
 import '../../presentation/about/privacy_policy_screen.dart';
+import '../../presentation/discover/discover_screen.dart';
 import '../../presentation/home/home_screen.dart';
 import '../../presentation/library/library_screen.dart';
 import '../../presentation/reader/reader_screen.dart';
@@ -9,13 +10,12 @@ import '../../presentation/settings/settings_screen.dart';
 import '../../presentation/shell/main_shell.dart';
 import '../../presentation/transcription/transcript_screen.dart';
 import '../../presentation/transcription/transcription_screen.dart';
-import '../../presentation/translation/translation_screen.dart';
 
 abstract final class AppRoutes {
   static const home = '/accueil';
   static const library = '/bibliotheque';
   static const transcription = '/transcrire';
-  static const translation = '/traduire';
+  static const discover = '/decouvrir';
   static const settings = '/parametres';
   static const about = '/parametres/a-propos';
   static const privacy = '/parametres/confidentialite';
@@ -57,8 +57,8 @@ GoRouter createRouter() => GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: AppRoutes.translation,
-              builder: (context, state) => const TranslationScreen(),
+              path: AppRoutes.discover,
+              builder: (context, state) => const DiscoverScreen(),
             ),
           ],
         ),

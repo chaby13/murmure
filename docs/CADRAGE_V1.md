@@ -44,10 +44,10 @@ Priorités : **P0** = lancement V1, **P1** = V1.1, **P2** = V2.
 | F-10 | Importer un fichier audio (WAV, M4A, MP3 selon décodeurs retenus), erreur explicite sinon | P0 | ASR-02 |
 | F-11 | Transcrire localement en FR ou EN | P0 | ASR-01 |
 | F-12 | Corriger, copier et exporter une transcription en TXT | P0 | ASR-01 |
-| F-13 | Traduire localement un extrait EN → FR | P0 | TR-02 |
-| F-14 | Traduire localement un extrait FR → EN | P0 | TR-01 |
-| F-15 | Traduire une sélection de PDF ou une transcription | P0 | TR-01/02 |
-| F-16 | Écouter séparément l'original et la traduction | P0 | TTS-01 |
+| F-13 | ~~Traduire localement un extrait EN → FR~~ (annulé le 23/10/2026 : modèles trop lourds) | — | TR-02 |
+| F-14 | ~~Traduire localement un extrait FR → EN~~ (annulé le 23/10/2026 : modèles trop lourds) | — | TR-01 |
+| F-15 | ~~Traduire une sélection de PDF ou une transcription~~ (annulé le 23/10/2026 : modèles trop lourds) | — | TR-01/02 |
+| F-16 | ~~Écouter séparément l'original et la traduction~~ (annulé le 23/10/2026 : modèles trop lourds) | — | TTS-01 |
 | F-17 | Bibliothèque locale : liste, recherche, filtres PDF/audio/transcriptions/favoris, tri, suppression | P0 | STORE-01 |
 | F-18 | Paramètres : voix, vitesse, apparence clair/sombre, langue UI, espace des modèles | P0 | UI-01 |
 | F-19 | Écran À propos : logo Chabane DEV, version issue du build, promesse locale exacte, licences, politique de confidentialité embarquée | P0 | BRAND-01, LEGAL-01 |
@@ -209,7 +209,7 @@ Probabilité (P) et impact (I) notés de 1 à 3.
 | L3 | PDF-01/02 : rendu, extraction, reprise de position | **Fait en partie** : rendu des pages (PDFium via pdfrx), nombre de pages à l'import, refus des PDF endommagés, page mémorisée et restaurée, texte de la page. Reste : recherche, signets, PDF protégés par mot de passe, test sur téléphone | Position restaurée après relance (testé sur la base) ; rendu vérifié dans un navigateur |
 | L4 | TTS-01/02 : voix réelles, panneau audio, arrière-plan | À faire | Écran verrouillé, commandes système |
 | L5 | ASR-01/02 : micro, import audio, transcription, export TXT | À faire | Fichiers de référence FR/EN |
-| L6 | TR-01/02 : traduction FR↔EN, écoute des deux versions | À faire | Jeu de phrases de test |
+| L6 | ~~TR-01/02 : traduction FR↔EN~~ annulée (≈ 200 Mo de modèles). Remplacée par l'onglet Découvrir : liens vers radios, livres et livres audio gratuits, ouverts dans le navigateur (l'appli garde zéro permission INTERNET) | Fait | Liens en https, testés |
 | L7 | OCR-01, P1 (bilingue, surlignage, minuterie, SRT) | À faire | Selon tickets |
 | L8 | QA-01, LEGAL-01, publication | À faire | Matrice de recette |
 

@@ -10,11 +10,13 @@ import '../data/sample/sample_library_repository.dart';
 import '../domain/services/audio_recorder.dart';
 import '../domain/services/document_picker.dart';
 import '../domain/services/library_repository.dart';
+import '../domain/services/link_opener.dart';
 import '../services/asr/whisper_asr_engine.dart';
 import '../services/audio/system_audio_recorder.dart';
 import '../services/engine_registry.dart';
 import '../services/tts/piper_tts_engine.dart';
 import '../services/files/system_document_picker.dart';
+import '../services/links/browser_link_opener.dart';
 import '../services/transcription/transcription_jobs.dart';
 import 'settings/settings_controller.dart';
 
@@ -26,6 +28,7 @@ class AppDependencies {
     required this.engines,
     required this.picker,
     this.recorder = const NoAudioRecorder(),
+    this.links = const BrowserLinkOpener(),
   }) : transcriptions = TranscriptionJobs(library: library, asr: engines.asr);
 
   /// Configuration réelle : bibliothèque SQLite dans le dossier privé de
@@ -57,18 +60,21 @@ class AppDependencies {
   }
 
   /// Démonstration : bibliothèque d'exemple en mémoire, clairement signalée.
-  factory AppDependencies.sample({DocumentPicker? picker}) => AppDependencies(
-    library: SampleLibraryRepository(),
-    settings: SettingsController(),
-    engines: const EngineRegistry.notIntegrated(),
-    picker: picker ?? const SystemDocumentPicker(),
-  );
+  factory AppDependencies.sample({DocumentPicker? picker, LinkOpener? links}) =>
+      AppDependencies(
+        library: SampleLibraryRepository(),
+        settings: SettingsController(),
+        engines: const EngineRegistry.notIntegrated(),
+        picker: picker ?? const SystemDocumentPicker(),
+        links: links ?? const BrowserLinkOpener(),
+      );
 
   final LibraryRepository library;
   final SettingsController settings;
   final EngineRegistry engines;
   final DocumentPicker picker;
   final AudioRecorderService recorder;
+  final LinkOpener links;
   final TranscriptionJobs transcriptions;
 }
 

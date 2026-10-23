@@ -110,9 +110,9 @@ class HomeScreen extends StatelessWidget {
                     onTap: () => context.go(AppRoutes.transcription),
                   ),
                   _QuickAction(
-                    icon: Icons.translate,
-                    label: 'Traduire',
-                    onTap: () => context.go(AppRoutes.translation),
+                    icon: Icons.explore_outlined,
+                    label: 'Découvrir',
+                    onTap: () => context.go(AppRoutes.discover),
                   ),
                   _QuickAction(
                     icon: Icons.menu_book_outlined,
