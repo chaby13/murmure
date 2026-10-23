@@ -25,7 +25,7 @@ class AppDependencies {
   /// Configuration réelle : bibliothèque SQLite dans le dossier privé de
   /// l'application.
   static Future<AppDependencies> local() async {
-    const engines = EngineRegistry.current();
+    final engines = EngineRegistry.current();
     final support = await getApplicationSupportDirectory();
     final library = await LocalLibraryRepository.open(
       databasePath: p.join(support.path, 'murmure.db'),

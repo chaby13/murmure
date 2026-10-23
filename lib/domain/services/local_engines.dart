@@ -47,8 +47,25 @@ abstract interface class OcrEngine implements LocalEngine {
   Future<String> recognizePage(String filePath, int pageIndex);
 }
 
+/// Erreur de synthèse vocale présentée telle quelle (voix manquante…).
+class TtsException implements Exception {
+  const TtsException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 abstract interface class TtsEngine implements LocalEngine {
-  Future<void> speak(String text, {required AppLanguage language});
+  /// Prononce [text] et se termine quand la lecture est finie ou arrêtée.
+  /// [rate] vaut 1 pour la vitesse normale. Lève [TtsException] si aucune
+  /// voix hors ligne n'existe pour [language].
+  Future<void> speak(
+    String text, {
+    required AppLanguage language,
+    double rate = 1,
+  });
 
   Future<void> stop();
 }

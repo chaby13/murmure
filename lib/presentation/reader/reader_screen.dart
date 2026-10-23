@@ -11,6 +11,8 @@ import '../widgets/empty_state.dart';
 import '../widgets/library_item_icon.dart';
 import '../widgets/not_integrated.dart';
 import '../widgets/sample_data_banner.dart';
+import 'read_aloud_controller.dart';
+import 'read_aloud_panel.dart';
 
 /// Texte de démonstration affiché à la place d'une extraction PDF réelle.
 const _sampleChapter = [
@@ -32,6 +34,32 @@ class ReaderScreen extends StatefulWidget {
 class _ReaderScreenState extends State<ReaderScreen> {
   int? _page;
   Timer? _saveTimer;
+  final _viewer = PdfViewerController();
+  ReadAloudController? _reader;
+  bool _readerInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_readerInitialized) return;
+    _readerInitialized = true;
+    final deps = AppScope.of(context);
+    final item = deps.library.byId(widget.itemId);
+    final file = item == null ? null : deps.library.fileOf(item);
+    final pages = item?.pageCount;
+    if (file == null || pages == null || !deps.engines.pdf.isAvailable) return;
+    if (!deps.engines.tts.isAvailable) return;
+    _reader = ReadAloudController(
+      tts: deps.engines.tts,
+      pdf: deps.engines.pdf,
+      filePath: file.path,
+      pageCount: pages,
+      startPage: item!.currentPage ?? 1,
+      onPageChanged: (page) {
+        if (_viewer.isReady) _viewer.goToPage(pageNumber: page);
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -45,12 +73,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _reader?.dispose();
     super.dispose();
   }
 
   void _onPageChanged(LibraryRepository library, int? page) {
     if (page == null || page == _page) return;
     setState(() => _page = page);
+    _reader?.followPage(page);
     // Enregistre la page quand la lecture se stabilise.
     _saveTimer?.cancel();
     _saveTimer = Timer(
@@ -89,6 +119,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         } else if (canRender) {
           content = PdfViewer.file(
             file.path,
+            controller: _viewer,
             initialPageNumber: item.currentPage ?? 1,
             params: PdfViewerParams(
               backgroundColor: mode.background,
@@ -152,7 +183,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
           body: Column(
             children: [
               Expanded(child: content),
-              const _AudioPanel(),
+              ReadAloudPanel(
+                controller: _reader,
+                unavailableReason: item.isSample
+                    ? 'Lecture à voix haute : importez un vrai PDF pour l’écouter.'
+                    : 'Lecture à voix haute indisponible pour ce document.',
+              ),
             ],
           ),
         );
@@ -301,76 +337,6 @@ class _ReaderAction extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [Icon(icon), const SizedBox(height: 4), Text(label)],
-      ),
-    );
-  }
-}
-
-/// Panneau audio fixe. Les commandes restent désactivées tant que la
-/// synthèse vocale locale (TTS-01) n'est pas intégrée.
-class _AudioPanel extends StatelessWidget {
-  const _AudioPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    final tts = AppScope.of(context).engines.tts;
-    const panel = MurmureColors.deepGreen;
-    const onPanel = Colors.white;
-    final disabled = onPanel.withValues(alpha: 0.45);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-      decoration: const BoxDecoration(
-        color: panel,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.record_voice_over_outlined, color: onPanel),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    tts.isAvailable
-                        ? 'Voix douce'
-                        : 'Lecture à voix haute : non disponible '
-                              '(${tts.ticket})',
-                    style: const TextStyle(color: onPanel),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  tooltip: 'Reculer de 15 secondes',
-                  onPressed: null,
-                  icon: Icon(Icons.replay, color: disabled),
-                ),
-                const SizedBox(width: 12),
-                IconButton.filled(
-                  tooltip: 'Lire',
-                  onPressed: null,
-                  iconSize: 32,
-                  icon: Icon(Icons.play_arrow, color: disabled),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  tooltip: 'Avancer de 15 secondes',
-                  onPressed: null,
-                  icon: Icon(Icons.forward_outlined, color: disabled),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

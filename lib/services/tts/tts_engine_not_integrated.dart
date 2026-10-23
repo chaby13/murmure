@@ -15,8 +15,11 @@ class TtsEngineNotIntegrated implements TtsEngine {
   bool get isAvailable => false;
 
   @override
-  Future<void> speak(String text, {required AppLanguage language}) =>
-      throw EngineNotIntegratedException(label, ticket);
+  Future<void> speak(
+    String text, {
+    required AppLanguage language,
+    double rate = 1,
+  }) => throw EngineNotIntegratedException(label, ticket);
 
   @override
   Future<void> stop() async {}

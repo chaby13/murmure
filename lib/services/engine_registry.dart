@@ -4,6 +4,7 @@ import 'ocr/ocr_engine_not_integrated.dart';
 import 'pdf/pdf_engine_not_integrated.dart';
 import 'pdf/pdfium_pdf_engine.dart';
 import 'translation/translation_engine_not_integrated.dart';
+import 'tts/system_tts_engine.dart';
 import 'tts/tts_engine_not_integrated.dart';
 
 /// Regroupe les moteurs locaux utilisés par l'application.
@@ -24,11 +25,11 @@ class EngineRegistry {
       asr = const AsrEngineNotIntegrated(),
       translation = const TranslationEngineNotIntegrated();
 
-  /// État actuel de l'application : seul le moteur PDF est intégré.
-  const EngineRegistry.current()
+  /// État actuel de l'application : moteur PDF et voix de l'appareil.
+  EngineRegistry.current()
     : pdf = const PdfiumPdfEngine(),
       ocr = const OcrEngineNotIntegrated(),
-      tts = const TtsEngineNotIntegrated(),
+      tts = SystemTtsEngine(),
       asr = const AsrEngineNotIntegrated(),
       translation = const TranslationEngineNotIntegrated();
 
