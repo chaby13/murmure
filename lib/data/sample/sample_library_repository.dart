@@ -113,6 +113,32 @@ class SampleLibraryRepository extends LibraryRepository {
       );
 
   @override
+  Future<LibraryItem> addAudio(
+    String sourcePath, {
+    required String title,
+    Duration? duration,
+    bool move = false,
+  }) async => throw const ImportException(
+    'La bibliothèque d’exemple ne peut pas enregistrer de fichiers.',
+  );
+
+  @override
+  Future<LibraryItem> addTranscription({
+    required String title,
+    required String text,
+  }) async => throw const ImportException(
+    'La bibliothèque d’exemple ne peut pas enregistrer de fichiers.',
+  );
+
+  @override
+  Future<String> readText(String id) async => throw const ImportException(
+    'Transcription d’exemple : aucun texte réel.',
+  );
+
+  @override
+  Future<void> saveText(String id, String text) async {}
+
+  @override
   Future<void> delete(String id) async {
     _items.removeWhere((item) => item.id == id);
     notifyListeners();

@@ -12,6 +12,7 @@ Lecture PDF à voix douce, transcription et traduction anglais ⇄ français, tr
 flutter pub get
 flutter analyze
 tool/fetch_pdfium.sh                                      # une fois, pour les tests du moteur PDF
+tool/fetch_whisper_model.sh                               # une fois, modèle de transcription embarqué (≈ 57 Mo)
 PDFIUM_PATH=.pdfium/lib/libpdfium.so flutter test
 flutter run
 ```

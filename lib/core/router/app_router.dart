@@ -7,6 +7,7 @@ import '../../presentation/library/library_screen.dart';
 import '../../presentation/reader/reader_screen.dart';
 import '../../presentation/settings/settings_screen.dart';
 import '../../presentation/shell/main_shell.dart';
+import '../../presentation/transcription/transcript_screen.dart';
 import '../../presentation/transcription/transcription_screen.dart';
 import '../../presentation/translation/translation_screen.dart';
 
@@ -20,6 +21,7 @@ abstract final class AppRoutes {
   static const privacy = '/parametres/confidentialite';
 
   static String reader(String id) => '/lecteur/$id';
+  static String transcript(String id) => '/texte/$id';
 }
 
 GoRouter createRouter() => GoRouter(
@@ -66,6 +68,11 @@ GoRouter createRouter() => GoRouter(
       path: '/lecteur/:id',
       builder: (context, state) =>
           ReaderScreen(itemId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/texte/:id',
+      builder: (context, state) =>
+          TranscriptScreen(itemId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: AppRoutes.settings,

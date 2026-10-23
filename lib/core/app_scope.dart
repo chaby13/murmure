@@ -7,10 +7,14 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../data/local/local_library_repository.dart';
 import '../data/sample/sample_library_repository.dart';
+import '../domain/services/audio_recorder.dart';
 import '../domain/services/document_picker.dart';
 import '../domain/services/library_repository.dart';
+import '../services/asr/whisper_asr_engine.dart';
+import '../services/audio/system_audio_recorder.dart';
 import '../services/engine_registry.dart';
 import '../services/files/system_document_picker.dart';
+import '../services/transcription/transcription_jobs.dart';
 import 'settings/settings_controller.dart';
 
 /// Dépendances de l'application, injectées une seule fois au démarrage.
@@ -20,12 +24,13 @@ class AppDependencies {
     required this.settings,
     required this.engines,
     required this.picker,
-  });
+    this.recorder = const NoAudioRecorder(),
+  }) : transcriptions = TranscriptionJobs(library: library, asr: engines.asr);
 
   /// Configuration réelle : bibliothèque SQLite dans le dossier privé de
   /// l'application.
   static Future<AppDependencies> local() async {
-    final engines = EngineRegistry.current();
+    final engines = EngineRegistry.current(asr: await WhisperAsrEngine.load());
     final support = await getApplicationSupportDirectory();
     final library = await LocalLibraryRepository.open(
       databasePath: p.join(support.path, 'murmure.db'),
@@ -41,6 +46,7 @@ class AppDependencies {
       settings: SettingsController(),
       engines: engines,
       picker: const SystemDocumentPicker(),
+      recorder: SystemAudioRecorder(),
     );
   }
 
@@ -56,6 +62,8 @@ class AppDependencies {
   final SettingsController settings;
   final EngineRegistry engines;
   final DocumentPicker picker;
+  final AudioRecorderService recorder;
+  final TranscriptionJobs transcriptions;
 }
 
 DatabaseFactory _desktopDatabase() {

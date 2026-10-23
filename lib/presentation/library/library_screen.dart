@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/app_scope.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/models/library_item.dart';
+import '../transcription/transcribe_audio.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/library_item_icon.dart';
 import '../widgets/not_integrated.dart';
@@ -160,9 +161,18 @@ class _LibraryTile extends StatelessWidget {
       case LibraryItemType.pdf:
         context.push(AppRoutes.reader(item.id));
       case LibraryItemType.audio:
-        showNotIntegrated(context, 'Lecture audio', 'ASR-02');
+        final asr = AppScope.of(context).engines.asr;
+        if (item.isSample || !asr.isAvailable) {
+          showNotIntegrated(context, 'Transcription de cet audio', asr.ticket);
+        } else {
+          askAndTranscribe(context, item);
+        }
       case LibraryItemType.transcription:
-        showNotIntegrated(context, 'Ouverture des transcriptions', 'ASR-01');
+        if (item.isSample) {
+          showNotIntegrated(context, 'Ouverture des transcriptions', 'ASR-01');
+        } else {
+          context.push(AppRoutes.transcript(item.id));
+        }
     }
   }
 }

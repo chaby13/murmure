@@ -70,8 +70,25 @@ abstract interface class TtsEngine implements LocalEngine {
   Future<void> stop();
 }
 
+/// Erreur de transcription présentée telle quelle (fichier illisible…).
+class AsrException implements Exception {
+  const AsrException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 abstract interface class AsrEngine implements LocalEngine {
-  Future<String> transcribe(String audioPath, {AppLanguage? language});
+  /// Transcrit [audioPath]. [language] null = détection automatique.
+  /// [onProgress] reçoit l'avancement de 0 à 100. Lève [AsrException] si
+  /// le son ne peut pas être transcrit.
+  Future<String> transcribe(
+    String audioPath, {
+    AppLanguage? language,
+    void Function(int percent)? onProgress,
+  });
 }
 
 abstract interface class TranslationEngine implements LocalEngine {

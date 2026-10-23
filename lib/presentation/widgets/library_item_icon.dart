@@ -44,8 +44,14 @@ String describeLibraryItem(LibraryItem item) {
       item.pageCount == null
           ? 'PDF • $size'
           : '${item.pageCount} pages • $size',
-    LibraryItemType.audio || LibraryItemType.transcription =>
-      '${formatDuration(item.duration ?? Duration.zero)} • $size',
+    LibraryItemType.audio =>
+      item.duration == null
+          ? 'Audio • $size'
+          : '${formatDuration(item.duration!)} • $size',
+    LibraryItemType.transcription =>
+      item.duration == null
+          ? 'Texte • $size'
+          : '${formatDuration(item.duration!)} • $size',
   };
 }
 

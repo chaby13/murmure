@@ -32,6 +32,27 @@ abstract class LibraryRepository extends ChangeNotifier {
   /// Lève [ImportException] si le fichier n'est pas un PDF lisible.
   Future<LibraryItem> importPdf(PickedDocument document);
 
+  /// Ajoute un fichier audio (enregistrement ou import). Avec [move], le
+  /// fichier source est déplacé au lieu d'être copié.
+  Future<LibraryItem> addAudio(
+    String sourcePath, {
+    required String title,
+    Duration? duration,
+    bool move = false,
+  });
+
+  /// Enregistre une transcription comme fichier texte privé.
+  Future<LibraryItem> addTranscription({
+    required String title,
+    required String text,
+  });
+
+  /// Texte d'une transcription.
+  Future<String> readText(String id);
+
+  /// Remplace le texte d'une transcription (après correction).
+  Future<void> saveText(String id, String text);
+
   /// Retire l'élément et efface son fichier du stockage privé.
   Future<void> delete(String id);
 

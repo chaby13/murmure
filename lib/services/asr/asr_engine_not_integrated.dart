@@ -15,6 +15,9 @@ class AsrEngineNotIntegrated implements AsrEngine {
   bool get isAvailable => false;
 
   @override
-  Future<String> transcribe(String audioPath, {AppLanguage? language}) =>
-      throw EngineNotIntegratedException(label, ticket);
+  Future<String> transcribe(
+    String audioPath, {
+    AppLanguage? language,
+    void Function(int percent)? onProgress,
+  }) => throw EngineNotIntegratedException(label, ticket);
 }

@@ -38,6 +38,9 @@ jobs:
           tool/fetch_pdfium.sh
           PDFIUM_PATH=.pdfium/lib/libpdfium.so flutter test
 
+      - name: Modèle de transcription
+        run: tool/fetch_whisper_model.sh
+
       - name: Compilation de l'APK
         run: flutter build apk --release
 
@@ -86,6 +89,10 @@ jobs:
           flutter-version: '3.47.7'
           channel: stable
           cache: true
+
+      - name: Modèle de transcription
+        shell: bash
+        run: tool/fetch_whisper_model.sh
 
       - name: Compilation Windows
         run: |

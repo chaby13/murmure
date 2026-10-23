@@ -107,6 +107,114 @@ class LocalLibraryRepository extends LibraryRepository {
   }
 
   @override
+  Future<LibraryItem> addAudio(
+    String sourcePath, {
+    required String title,
+    Duration? duration,
+    bool move = false,
+  }) async {
+    final source = File(sourcePath);
+    if (!await source.exists()) {
+      throw const ImportException('Le fichier audio est introuvable.');
+    }
+    final id = _newId();
+    var extension = p.extension(sourcePath).toLowerCase();
+    if (extension.isEmpty) extension = '.audio';
+    final fileName = '$id$extension';
+    final target = p.join(_documentsDir.path, fileName);
+    final copy = move
+        ? await _moveFile(source, target)
+        : await source.copy(target);
+    await _insert(
+      id: id,
+      title: title,
+      type: LibraryItemType.audio,
+      fileName: fileName,
+      sizeBytes: await copy.length(),
+      // La durée réelle du WAV prime sur celle mesurée pendant l'enregistrement.
+      duration: await wavDuration(copy) ?? duration,
+    );
+    return byId(id)!;
+  }
+
+  @override
+  Future<LibraryItem> addTranscription({
+    required String title,
+    required String text,
+  }) async {
+    final id = _newId();
+    final fileName = '$id.txt';
+    final file = File(p.join(_documentsDir.path, fileName));
+    await file.writeAsString(text, flush: true);
+    await _insert(
+      id: id,
+      title: title,
+      type: LibraryItemType.transcription,
+      fileName: fileName,
+      sizeBytes: await file.length(),
+    );
+    return byId(id)!;
+  }
+
+  @override
+  Future<String> readText(String id) async {
+    final item = byId(id);
+    final file = item == null ? null : fileOf(item);
+    if (file == null || !await file.exists()) {
+      throw const ImportException('Cette transcription est introuvable.');
+    }
+    return file.readAsString();
+  }
+
+  @override
+  Future<void> saveText(String id, String text) async {
+    final item = byId(id);
+    final file = item == null ? null : fileOf(item);
+    if (file == null) return;
+    await file.writeAsString(text, flush: true);
+    await _db.update(
+      'items',
+      {'size_bytes': await file.length()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await _reload();
+  }
+
+  Future<void> _insert({
+    required String id,
+    required String title,
+    required LibraryItemType type,
+    required String fileName,
+    required int sizeBytes,
+    Duration? duration,
+  }) async {
+    await _db.insert('items', {
+      'id': id,
+      'title': title,
+      'type': type.name,
+      'file_name': fileName,
+      'size_bytes': sizeBytes,
+      'duration_ms': duration?.inMilliseconds,
+      'is_favorite': 0,
+      'added_at': DateTime.now().millisecondsSinceEpoch,
+    });
+    await _reload();
+  }
+
+  /// Le dossier temporaire peut être sur un autre volume : on copie alors
+  /// puis on efface.
+  static Future<File> _moveFile(File source, String target) async {
+    try {
+      return await source.rename(target);
+    } on FileSystemException {
+      final copy = await source.copy(target);
+      await source.delete();
+      return copy;
+    }
+  }
+
+  @override
   Future<void> delete(String id) async {
     final item = byId(id);
     if (item == null) return;
@@ -179,6 +287,23 @@ class LocalLibraryRepository extends LibraryRepository {
       lastOpenedAt: date(row['last_opened_at']),
       isSample: false,
     );
+  }
+
+  /// Durée d'un fichier WAV d'après son en-tête, null pour un autre format.
+  static Future<Duration?> wavDuration(File file) async {
+    final head = <int>[];
+    await for (final chunk in file.openRead(0, 44)) {
+      head.addAll(chunk);
+    }
+    if (head.length < 44 ||
+        String.fromCharCodes(head.sublist(0, 4)) != 'RIFF' ||
+        String.fromCharCodes(head.sublist(8, 12)) != 'WAVE') {
+      return null;
+    }
+    final byteRate = head[28] | head[29] << 8 | head[30] << 16 | head[31] << 24;
+    if (byteRate == 0) return null;
+    final dataBytes = await file.length() - 44;
+    return Duration(milliseconds: dataBytes * 1000 ~/ byteRate);
   }
 
   /// La norme PDF place l'en-tête « %PDF- » dans le premier kilo-octet.

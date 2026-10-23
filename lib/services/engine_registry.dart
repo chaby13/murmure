@@ -25,12 +25,12 @@ class EngineRegistry {
       asr = const AsrEngineNotIntegrated(),
       translation = const TranslationEngineNotIntegrated();
 
-  /// État actuel de l'application : moteur PDF et voix de l'appareil.
-  EngineRegistry.current()
+  /// État actuel de l'application : moteur PDF, voix de l'appareil et
+  /// transcription [asr] (whisper.cpp quand son modèle est embarqué).
+  EngineRegistry.current({required this.asr})
     : pdf = const PdfiumPdfEngine(),
       ocr = const OcrEngineNotIntegrated(),
       tts = SystemTtsEngine(),
-      asr = const AsrEngineNotIntegrated(),
       translation = const TranslationEngineNotIntegrated();
 
   final PdfEngine pdf;
