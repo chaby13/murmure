@@ -51,6 +51,10 @@ jobs:
           fi
           echo "OK : aucune permission INTERNET."
 
+      # APK léger (arm64 seulement : téléphones de 2017 et après) à envoyer par mail.
+      - name: Compilation de l'APK léger
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64
+
       - name: Publier l'APK
         uses: actions/upload-artifact@v4
         with:
@@ -64,8 +68,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk murmure.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk murmure-leger.apk
+          ls -lh murmure.apk murmure-leger.apk
           gh release delete apk-test --yes --cleanup-tag || true
-          gh release create apk-test murmure.apk --prerelease --target "$GITHUB_SHA" \
+          gh release create apk-test murmure.apk murmure-leger.apk --prerelease --target "$GITHUB_SHA" \
             --title "Murmure, version de test" \
             --notes "APK de test fabriqué automatiquement depuis le commit $GITHUB_SHA."
 
