@@ -78,7 +78,13 @@ void main() {
       path: source.path,
     );
     await tester.tap(find.text('Importer un PDF'));
-    await settleIo(tester);
+    await settleIo(
+      tester,
+      until: () => find
+          .textContaining('a été ajouté à la bibliothèque')
+          .evaluate()
+          .isNotEmpty,
+    );
     expect(
       find.textContaining('a été ajouté à la bibliothèque'),
       findsOneWidget,
@@ -110,7 +116,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Supprimer ce document ?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Supprimer'));
-    await settleIo(tester);
+    await settleIo(tester, until: () => repo.items.isEmpty);
     expect(repo.items, isEmpty);
     expect(find.text('Bibliothèque vide'), findsOneWidget);
   });
