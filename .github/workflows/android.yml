@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,3 +56,15 @@ jobs:
         with:
           name: murmure-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      # Lien direct vers le dernier APK (sans zip) pour l'installer sur un téléphone.
+      - name: Mettre à jour la version de test
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk murmure.apk
+          gh release delete apk-test --yes --cleanup-tag || true
+          gh release create apk-test murmure.apk --prerelease --target "$GITHUB_SHA" \
+            --title "Murmure, version de test" \
+            --notes "APK de test fabriqué automatiquement depuis le commit $GITHUB_SHA."
